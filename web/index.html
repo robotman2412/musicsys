@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<link rel="stylesheet" href="newstyle.css" type="text/css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+		<link rel="icon" type="image/x-icon" href="/favicon.ico">
+		<script src="newstyle.js"></script>
+		<title id="title_elem">LAN party music system</title>
+		<template id="song_template">
+			<div id="song_meta[id]" class="song-o-new">
+				<div class="song-i">
+					<img class="song-img" src="meta[icon_url]">
+					<div class="song-content">
+						<i class="song-delete fa fa-trash" onclick="event.button==0&&delete_song(meta[id])"></i>
+						<p class="song-name" id="song_meta[id]_name">meta[name]</p>
+						<p class="song-duration" id="song_meta[id]_duration"></p>
+						<div class="song-add" id="song_meta[id]_button_left" onclick="event.button==0&&add_to_queue(meta[id])"><div></div></div>
+						<div class="song-play" id="song_meta[id]_button_center" onclick="event.button==0&&play_song(meta[id])"><div></div></div>
+					</div>
+					<div id="song_meta[id]_load_outer" class="song-load-o">
+						<div id="song_meta[id]_load" class="song-load-i" style="width: 50%;">
+							50%
+						</div>
+					</div>
+				</div>
+			</div>
+		</template>
+		<template id="song_in_queue_template">
+			<div id="qsong_meta[index]" class="song-o-new">
+				<div class="song-i">
+					<img class="song-img" src="meta[icon_url]">
+					<div class="song-content">
+						<p class="song-name" id="qsong_meta[index]_name">meta[name]</p>
+						<p class="song-duration" id="qsong_meta[index]_duration">meta[str_duration]</p>
+						<div class="song-remove" id="qsong_meta[index]_button_left" onclick="event.button==0&&remove_from_queue(meta[index])"><div></div></div>
+						<div class="song-play" id="qsong_meta[index]_button_center" onclick="event.button==0&&qplay_song(meta[index])"><div></div></div>
+					</div>
+				</div>
+			</div>
+		</template>
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="LAN Party music system">
+		<meta property="og:description" content="Gaming!">
+		<meta name="theme-color" content="#6942a2">
+	</head>
+	<body style="font-family:verdana;" onload="onLoad()">
+		<div id="templater" style="display: none;"></div>
+		<div class="center-disp"></div>
+		<div id="center" class="center">
+			<h1 id="title_h1">LAN PARTY MUSIC SYSTEM</h1>
+			<div class="fft-canvas-o">
+				<canvas class="fft-canvas" id="fft_canvas"></canvas>
+				<div class="controls" id="controls">
+					<div class="time-o" onmousedown="event.button==0&&update_time()">
+						<div class="time-i">
+							<div class="time-calc" id="time_calc"></div>
+						</div>
+						<div class="time-knob-o">
+							<div class="time-tail" id="time_tail"></div>
+							<div class="time-knob" id="time_knob"></div>
+						</div>
+					</div>
+					<div class="volume-o" onmousedown="event.button==0&&update_volume()">
+						<i class="fa fa-volume-up"></i>
+						<div class="time-i">
+							<div class="time-calc" id="volume_calc"></div>
+						</div>
+						<div class="time-knob-o">
+							<div class="time-tail" id="volume_tail"></div>
+							<div class="time-knob" id="volume_knob"></div>
+						</div>
+					</div>
+					<div class="big-play-o" onmousedown="event.button==0&&big_play_pause()" id="big_play"></div>
+					<div class="song-play-o" onmousedown="event.button==0&&play_pause()">
+						<div id="song_play0" class="song-play-0"></div>
+						<div id="song_play1" class="song-play-1"></div>
+					</div>
+					<div class="song-skip-o" onmousedown="event.button==0&&skip_song()">
+						<div class="song-skip-i"></div>
+					</div>
+					<p class="play-timer" id="play_timer">00:00 / 00:00</p>
+				</div>
+			</div>
+			<div id="now_playing_holder" class="holder"></div>
+			<hr>
+			<h2>QUEUE</h2>
+			<div id="song_queue_holder" class="holder"></div>
+			<hr>
+			<h2>ACTIONS</h2>
+			<button onclick="event.button==0&&confirm('Do you want to clear the song queue?')&&clear_queue()" class="wide">CLEAR QUEUE</button>
+			<input id="add_songs_for_time" class="half-wide" placeholder="15:00"
+			><button class="half-wide" onclick="event.button==0&&add_songs_for_time()">MINUTES OF SONG</button>
+			<hr>
+			<h2>SONGS</h2>
+			<div id="song_holder" class="holder"></div>
+			<hr>
+			<h2>UPLOAD SONG</h2>
+			<h3>SONG URL</h3>
+			<input onclick="setTimeout(clr_err, 100, 'song_url');" onkeyup="song_question()" onkeydown="song_question()"
+			       onchange="song_question()" id="song_url" type="text" class="wide">
+			<h3>SONG NAME</h3>
+			<input onclick="setTimeout(clr_err, 100, 'song_name');" id="song_name" type="text" class="wide">
+			<button class="wide" onclick="event.button==0&&submit_song()">ADD SONG</button>
+			<!--<hr>
+			<h2>UPLOAD MP3</h2>
+			<h3>SONG NAME</h3>
+			<form id="submission_form" method="post" action="/upload">
+				<input id="song_name_mp3" type="text" class="wide">
+				<input type="file" class="wide" id="mp3_uploader">
+				<button type="submit" class="wide" onclick="upload_mp3()">UPLOAD MP3</button>
+			</form>!-->
+		</div>
+	</body>
+</html>
+
