@@ -434,8 +434,8 @@ void startHttpServer(int port, std::string doc_root, int threads) {
 }
 
 void stopHttpServer() {
-    ioc->stop();
-    for (auto &thread: threadList) {
-        thread.join();
-    }
+	ioc->stop();
+	for (auto &thread: threadList) {
+		thread.join();
+	}
 }

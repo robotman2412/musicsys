@@ -2,8 +2,12 @@
 #pragma once
 
 #include <string>
+#include <functional>
 
-extern void handleMessage(std::string in);
+typedef std::function<void(std::string)> Messager;
+
+extern void handleAccepted(Messager socket);
+extern void handleMessage(Messager socket, std::string in);
 void broadcast(std::string in);
 void startWebsocketServer(int port, int threads);
 void stopWebsocketServer();

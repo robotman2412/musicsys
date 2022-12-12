@@ -43,6 +43,10 @@ void MpegPlayer::playerMain() {
 				// Send out the samples.
 				combineBuffers();
 				sendAudio();
+				
+				// Update current time.
+				currentTime += sampleCount / (float) mp3_type.samplerate;
+				playDuration = mp3_type.nsamp / (float) mp3_type.samplerate;
 			}
 		} else {
 			usleep(50000);
@@ -52,9 +56,10 @@ void MpegPlayer::playerMain() {
 
 // (Owner: player thread) Merge left and right into combined.
 void MpegPlayer::combineBuffers() {
+	float vol = volume * volume;
 	for (size_t i = 0; i < sampleCount; i++) {
-		combinedBuf[i*2+0] = leftBuf [i] * volume;
-		combinedBuf[i*2+1] = rightBuf[i] * volume;
+		combinedBuf[i*2+0] = leftBuf [i] * vol;
+		combinedBuf[i*2+1] = rightBuf[i] * vol;
 	}
 }
 
@@ -159,6 +164,14 @@ void MpegPlayer::clear() {
 	playMtx.unlock();
 }
 
+// Current status of the player.
+MpegPlayer::Status MpegPlayer::getStatus() {
+	if (!isSetup) return IDLE;
+	if (isPlaying) return PLAYING;
+	if (isPlayable) return PAUSED;
+	return ERRORED;
+}
+
 
 // Determine duration in seconds.
 // Returns NaN if unknown.
@@ -183,7 +196,6 @@ void MpegPlayer::setVolume(float volume) {
 	playMtx.lock();
 	if (volume > VOLUME_MAXIMUM) volume = VOLUME_MAXIMUM;
 	if (volume < VOLUME_MINIMUM) volume = VOLUME_MINIMUM;
-	volume *= volume;
 	this->volume = volume;
 	playMtx.unlock();
 }

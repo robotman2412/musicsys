@@ -6,7 +6,7 @@ LDFLAGS       = -lpthread -lm -lstdc++ $(shell pkg-config --libs libpulse libpul
 CFLAGS_ALL    = -Isrc -Ijson/include -Wno-unused-result -Wno-format-truncation -Wno-narrowing -std=c++17 $(shell pkg-config --cflags libpulse libpulse-simple)
 CFLAGS        = $(CFLAGS_ALL)
 CFLAGS_DEBUG  = $(CFLAGS_ALL) -O0 -ggdb -DDEBUG
-HEADERS       = $(shell find ./src -type f -name "*.h")
+HEADERS       = $(shell find ./src -type f -name "*.h" -o -name "*.hpp")
 SOURCES       = $(shell find ./src -type f -name "*.c" -o -name "*.cpp")
 OBJECTS       = $(shell find ./src -type f -name "*.c" -o -name "*.cpp" -printf '%p.o\n' | sed -e 's/src/build/')
 OBJECTS_DEBUG = $(shell find ./src -type f -name "*.c" -o -name "*.cpp" -printf '%p.debug.o\n' | sed -e 's/src/build/')

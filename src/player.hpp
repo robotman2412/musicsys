@@ -59,6 +59,14 @@ class MpegPlayer {
 		void sendAudio();
 		
 	public:
+		enum Status {
+			PLAYING,
+			PAUSED,
+			FINISHED,
+			ERRORED,
+			IDLE
+		};
+		
 		// Creates an empty MP3 players.
 		MpegPlayer();
 		// Stops playback and destroys MP3 player.
@@ -73,6 +81,8 @@ class MpegPlayer {
 		void pause();
 		// Stop playback and forget current file.
 		void clear();
+		// Current status of the player.
+		Status getStatus();
 		
 		// Determine duration in seconds.
 		// Returns NaN if unknown.

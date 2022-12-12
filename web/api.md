@@ -106,3 +106,31 @@ Queries the name from a song link
 
 Reports the name from a song link
 
+# Message: set_play_current_time
+| Direction | Type
+| --------- | ----
+| C2S       | Double
+
+Sets the playback time in seconds
+
+# Message: set_volume
+| Direction | Type
+| --------- | ----
+| Both      | Double
+
+Sets the playback volume
+
+# Message: skip_song
+| Direction | Type
+| --------- | ----
+| C2S       | Any
+
+When present, skip current song
+
+# Message: play_song_now
+| Direction | Type
+| --------- | ----
+| C2S       | ID
+
+Play the song with
+ the given ID
