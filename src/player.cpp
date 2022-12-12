@@ -23,8 +23,9 @@ void MpegPlayer::playerMain() {
 				// Load bytes from input file.
 				size_t num = fread(raw, 1, sizeof(raw), currentFd);
 				if (!num) {
+					// This is clearly the end.
 					isPlaying  = false;
-					isPlayable = false;
+					isFinished = true;
 					break;
 				}
 				
@@ -39,7 +40,12 @@ void MpegPlayer::playerMain() {
 			
 			playMtx.unlock();
 			
-			if (isPlayable) {
+			if (isPlayable && !isFinished) {
+				if (sampleRate != mp3_type.samplerate) {
+					sampleRate = mp3_type.samplerate;
+					fixSampleRate();
+				}
+				
 				// Send out the samples.
 				combineBuffers();
 				sendAudio();
@@ -71,24 +77,15 @@ void MpegPlayer::sendAudio() {
 	}
 }
 
-
-// Creates an empty MP3 players.
-MpegPlayer::MpegPlayer():
-	isSetup  (false),
-	isPlaying(false),
-	isAlive  (true) {
-	player = new std::thread(&MpegPlayer::playerMain, this);
-	currentTime  = 0;
-	playDuration = 0;
-	currentFd    = NULL;
-	leftBuf      = new int16_t[BUFFER_SAMPLES];
-	rightBuf     = new int16_t[BUFFER_SAMPLES];
-	combinedBuf  = new int16_t[BUFFER_SAMPLES * 2];
-	volume       = 1;
+// (Owner: player thread) Fix sample rate by re-opening PulseAudio connection.
+void MpegPlayer::fixSampleRate() {
+	playMtx.lock();
 	
-	static const pa_sample_spec ss = {
-		.format = PA_SAMPLE_S16NE,
-		.rate = 44100,
+	pa_simple_free(paCtx);
+	
+	const pa_sample_spec ss = {
+		.format   = PA_SAMPLE_S16NE,
+		.rate     = sampleRate,
 		.channels = 2
 	};
 	
@@ -99,6 +96,40 @@ MpegPlayer::MpegPlayer():
 		fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
 		throw std::bad_alloc();
 	}
+	playMtx.unlock();
+}
+
+
+// Creates an empty MP3 players.
+MpegPlayer::MpegPlayer():
+	isSetup  (false),
+	isPlaying(false),
+	isAlive  (true) {
+	isFinished   = false;
+	currentTime  = 0;
+	playDuration = 0;
+	currentFd    = NULL;
+	leftBuf      = new int16_t[BUFFER_SAMPLES];
+	rightBuf     = new int16_t[BUFFER_SAMPLES];
+	combinedBuf  = new int16_t[BUFFER_SAMPLES * 2];
+	volume       = 1;
+	
+	sampleRate = 44100;
+	const pa_sample_spec ss = {
+		.format   = PA_SAMPLE_S16NE,
+		.rate     = sampleRate,
+		.channels = 2
+	};
+	
+	/* Create a new playback stream */
+	int error;
+	paCtx = pa_simple_new(NULL, "musicsys", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &error);
+	if (!paCtx) {
+		fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+		throw std::bad_alloc();
+	}
+	
+	player = new std::thread(&MpegPlayer::playerMain, this);
 }
 
 // Stops playback and destroys MP3 player.
@@ -129,6 +160,7 @@ void MpegPlayer::loadFile(std::string path) {
 		isSetup    = false;
 		isPlayable = false;
 	}
+	currentTime = 0;
 	
 	playMtx.unlock();
 }
@@ -157,9 +189,11 @@ void MpegPlayer::clear() {
 		hip_decode_exit(decoder);
 	}
 	
-	isSetup   = false;
-	isPlaying = false;
-	currentFd = NULL;
+	isFinished  = false;
+	isSetup     = false;
+	isPlaying   = false;
+	currentFd   = NULL;
+	currentTime = 0;
 	
 	playMtx.unlock();
 }
@@ -168,8 +202,17 @@ void MpegPlayer::clear() {
 MpegPlayer::Status MpegPlayer::getStatus() {
 	if (!isSetup) return IDLE;
 	if (isPlaying) return PLAYING;
+	if (isFinished) return FINISHED;
 	if (isPlayable) return PAUSED;
 	return ERRORED;
+}
+
+// Acknowledge finished status and reset to idle status.
+void MpegPlayer::acknowledge() {
+	if (isFinished) {
+		isFinished = false;
+		clear();
+	}
 }
 
 

@@ -181,6 +181,15 @@ function restart_web_soc() {
 	//dirty approach
 	//document.location.reload();
 	
+	// Close WS if possible.
+	try {
+		ws.onclose = ()=>{};
+		ws.onerror = ()=>{};
+		ws.close();
+	} catch(x) {
+		// console.error(x);
+	}
+	
 	// Delete all dynamically loaded content.
 	document.getElementById("now_playing_holder").innerHTML = "";
 	document.getElementById("song_queue_holder").innerHTML = "";
@@ -191,7 +200,7 @@ function restart_web_soc() {
 	song_queue = {};
 	playing_present = false;
 	
-	//start_web_soc();
+	setTimeout(start_web_soc, 1000);
 }
 
 function start_web_soc() {
@@ -376,6 +385,7 @@ function handle_meta(meta) {
 	}
 	load = document.getElementById("song_" + meta.id + "_load");
 	load_outer = document.getElementById("song_" + meta.id + "_load_outer");
+	load_text = document.getElementById("song_" + meta.id + "_load_text");
 	delete_it = document.getElementById("song_" + meta.id + "_delete");
 	button_left = document.getElementById("song_" + meta.id + "_button_left");
 	button_center = document.getElementById("song_" + meta.id + "_button_center");
@@ -383,12 +393,12 @@ function handle_meta(meta) {
 	percent = Math.round(meta.download_progress * 100);
 	if (meta.download_progress < 1) {
 		load.setAttribute("style", "width: " + percent + "%;");
-		load.innerHTML = "uploading - " + percent + "%";
+		load_text.innerHTML = "uploading - " + percent + "%";
 	}
 	else if (meta.is_converting) {
 		load.setAttribute("class", "song-load-i-conv");
-		load.innerHTML = "converting";
 		load.setAttribute("style", "width: 100%;");
+		load_text.innerHTML = "converting";
 	}
 	else
 	{
@@ -858,7 +868,7 @@ function str_duration_to_seconds(duration) {
 
 function clear_queue() {
 	for (index in song_queue) {
-		remove_from_queue(index);
+		remove_from_queue(parseInt(index));
 	}
 }
 

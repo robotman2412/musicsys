@@ -36,6 +36,14 @@
 }
 ```
 
+# Type: Song submission
+```
+{
+	url: String,
+	name: String
+}
+```
+
 # Message: song_meta
 | Direction | Type
 | --------- | ----
@@ -63,6 +71,13 @@ Indicates an update to the currently playing song
 | Both      | ID
 
 Deletes the song with a given ID.
+
+# Message: add_to_queue
+| Direction | Type
+| --------- | ----
+| C2S       | ID
+
+Adds the song with a given ID to the queue.
 
 # Message: remove_from_queue
 | Direction | Type
@@ -120,7 +135,7 @@ Sets the playback time in seconds
 
 Sets the playback volume
 
-# Message: skip_song
+# Message: skip
 | Direction | Type
 | --------- | ----
 | C2S       | Any
@@ -132,5 +147,11 @@ When present, skip current song
 | --------- | ----
 | C2S       | ID
 
-Play the song with
- the given ID
+Play the song with the given ID
+
+# Message: submit_song
+| Direction | Type
+| --------- | ----
+| C2S       | Song submission
+
+Submits a song for downloading.

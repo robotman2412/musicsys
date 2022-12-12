@@ -101,12 +101,17 @@ public:
 		}
 		
 		handleAccepted([this](std::string msg) -> void {
-			ws_.text(ws_.got_text());
-			ws_.async_write(
-				sendBuffer.data(),
-				beast::bind_front_handler(
-					&WsSession::on_write,
-					shared_from_this()));
+			ws_.text(true);
+			beast::error_code ec;
+			beast::flat_buffer buf;
+			const char *raw = msg.c_str();
+			size_t len = strlen(raw);
+			buf.reserve(len);
+			auto w = buf.prepare(len);
+			char *dst = (char *) w.data();
+			memcpy(dst, raw, len);
+			buf.commit(len);
+			size_t size = ws_.write(buf.data(), ec);
 		});
 		
 		// Read a message
@@ -156,12 +161,17 @@ public:
 
 		// Echo the message
 		handleMessage([this](std::string msg) -> void {
-			ws_.text(ws_.got_text());
-			ws_.async_write(
-				sendBuffer.data(),
-				beast::bind_front_handler(
-					&WsSession::on_write,
-					shared_from_this()));
+			ws_.text(true);
+			beast::error_code ec;
+			beast::flat_buffer buf;
+			const char *raw = msg.c_str();
+			size_t len = strlen(raw);
+			buf.reserve(len);
+			auto w = buf.prepare(len);
+			char *dst = (char *) w.data();
+			memcpy(dst, raw, len);
+			buf.commit(len);
+			size_t size = ws_.write(buf.data(), ec);
 		}, beast::buffers_to_string(recvBuffer.data()));
 		// ws_.text(ws_.got_text());
 		// ws_.async_write(
@@ -293,16 +303,17 @@ static std::shared_ptr<WsListener> listener;
 static std::shared_ptr<std::string const> docRoot;
 
 void broadcast(std::string in) {
+	beast::flat_buffer buf;
 	for (auto session: sessions) {
 		const char *raw = in.c_str();
 		size_t len = strlen(raw);
-		session->sendBuffer.reserve(len);
-		auto w = session->sendBuffer.prepare(len);
+		buf.reserve(len);
+		auto w = buf.prepare(len);
 		char *dst = (char *) w.data();
 		memcpy(dst, raw, len);
-		session->sendBuffer.commit(len);
-		session->ws_.write(session->sendBuffer.data());
-		session->sendBuffer.consume(session->sendBuffer.max_size());
+		buf.commit(len);
+		session->ws_.write(buf.data());
+		buf.consume(buf.max_size());
 	}
 }
 

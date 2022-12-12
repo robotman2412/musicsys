@@ -35,9 +35,13 @@ class Song {
 		Song(json &object);
 		// Save to song_meta folder.
 		void save();
+		// Delete from song_meta and song folders.
+		void remove();
 		// Convert song to JSON.
 		json toJson();
 		
+		// Gets teh STRING DURATION for theee seconds count.
+		static std::string stringDuration(float seconds);
 		// Load from song_meta folder.
 		static Song load(uint id);
 		// Load all songs from song_meta folder.

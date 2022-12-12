@@ -33,6 +33,8 @@ class MpegPlayer {
 		volatile bool  isSetup;
 		// Whether it is playing.
 		volatile bool  isPlaying;
+		// Whether it is finished playing.
+		volatile bool  isFinished;
 		// True when there are no errors and it is not the end of the file.
 		volatile bool  isPlayable;
 		// Duration, or NaN if unknown.
@@ -41,6 +43,8 @@ class MpegPlayer {
 		volatile float currentTime;
 		// Current playback volume.
 		volatile float volume;
+		// Current playback sample rate.
+		volatile float sampleRate;
 		
 		// (Owner: player thread) Amount of samples in the buffers.
 		ssize_t     sampleCount;
@@ -57,6 +61,8 @@ class MpegPlayer {
 		void combineBuffers();
 		// (Owner: player thread) Send samples from buffers to PulseAudio.
 		void sendAudio();
+		// (Owner: player thread) Fix sample rate by re-opening PulseAudio connection.
+		void fixSampleRate();
 		
 	public:
 		enum Status {
@@ -83,6 +89,8 @@ class MpegPlayer {
 		void clear();
 		// Current status of the player.
 		Status getStatus();
+		// Acknowledge finished status and reset to idle status.
+		void acknowledge();
 		
 		// Determine duration in seconds.
 		// Returns NaN if unknown.

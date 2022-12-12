@@ -212,6 +212,16 @@ div.song-load-i {
 	border-radius: 10px;
 }
 
+div.song-load-text {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	bottom: 0px;
+	right: 0px;
+	text-align: center;
+	z-index: 3;
+}
+
 @keyframes fade-away {
 	0% {opacity: 1;}
 	50% {opacity: 0;}
