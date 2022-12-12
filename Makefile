@@ -3,7 +3,7 @@
 MAKEFLAGS    += --jobs=$(shell nproc)
 CC            = gcc
 LDFLAGS       = -lpthread -lm -lstdc++ $(shell pkg-config --libs libpulse libpulse-simple) -lmp3lame
-CFLAGS_ALL    = -Isrc -Wno-unused-result -Wno-format-truncation -Wno-narrowing -std=c++17 $(shell pkg-config --cflags libpulse libpulse-simple)
+CFLAGS_ALL    = -Isrc -Ijson/include -Wno-unused-result -Wno-format-truncation -Wno-narrowing -std=c++17 $(shell pkg-config --cflags libpulse libpulse-simple)
 CFLAGS        = $(CFLAGS_ALL)
 CFLAGS_DEBUG  = $(CFLAGS_ALL) -O0 -ggdb -DDEBUG
 HEADERS       = $(shell find ./src -type f -name "*.h")
