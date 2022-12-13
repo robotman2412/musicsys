@@ -5,6 +5,7 @@
 #include "player.hpp"
 #include "data.hpp"
 #include "download.hpp"
+#include "fft.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
