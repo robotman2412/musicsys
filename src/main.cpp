@@ -16,6 +16,9 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/time.h>
+
+#include <queue>
 
 #include <pulse/simple.h>
 #include <pulse/error.h>
@@ -31,6 +34,10 @@ std::vector<Song> queue;
 uint64_t queue_index = 0;
 std::map<uint, Song> songs;
 std::vector<Download *> downloads;
+FFTSpectrum<int16_t> spectrum;
+std::mutex fftMutex;
+std::queue<std::vector<int16_t>> analysed;
+float fftRate = 60;
 
 int main(int argc, char **argv) {
 	// Start servers.
@@ -48,10 +55,32 @@ int main(int argc, char **argv) {
 	}
 	std::cout << "Next song id: " << new_id_index << std::endl;
 	
+	// Create the testing FFT..
+	player.sampleCallback = [](size_t sampleCount, int16_t *left, int16_t *right, float sampleRate) -> void {
+		// Create a temporary buffer.
+		std::vector<int16_t> sampleBuf;
+		sampleBuf.resize(sampleCount);
+		
+		// Mix samples into a buffer.
+		for (size_t i = 0; i < sampleCount; i++) {
+			sampleBuf[i] = left[i] + right[i];
+		}
+		
+		// Send samples through FFT.
+		std::lock_guard lock(fftMutex);
+		size_t i = 0;
+		for (std::vector<int16_t> &entry: spectrum.feedSamples(sampleBuf)) {
+			analysed.emplace(entry);
+			i++;
+		}
+		std::cout << "In: " << sampleCount << ", Out: " << i << std::endl;
+	};
+	
 	// Default volume.
 	player.setVolume(0.4);
 	
 	// Send metadata from time to time.
+	uint64_t nextTime = micros();
 	while (1) {
 		sendSongStatus();
 		if (player.getStatus() == MpegPlayer::FINISHED) {
@@ -65,14 +94,39 @@ int main(int argc, char **argv) {
 				broadcast("{\"now_playing_nothing\":true}");
 				nowPlaying = Song();
 			}
+			
+		} else if (player.getStatus() == MpegPlayer::PLAYING) {
+			nextTime += 1000000 / fftRate;
+			
+			// Am send FFT data?
+			std::lock_guard lock(fftMutex);
+			if (analysed.size()) {
+				std::vector<int16_t> analisys = analysed.front();
+				analysed.pop();
+				json arr = json::array();
+				for (auto i: analisys) arr.push_back(i);
+				json obj;
+				obj["fft_data"] = arr;
+				broadcast(obj.dump());
+			}
+		} else {
+			nextTime = micros() + 100000;
 		}
-		usleep(100000);
+		
+		usleep(nextTime - micros());
 	}
 	
 	// Close servers.
 	stopHttpServer();
 	stopWebsocketServer();
 	return 0;
+}
+
+// Get time in microseconds.
+uint64_t micros() {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 // Handle a new connecting socket.

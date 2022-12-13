@@ -7,10 +7,14 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <functional>
 
 #include <lame/lame.h>
 #include <pulse/simple.h>
 #include <pulse/error.h>
+
+// A callback for consuming audio samples.
+typedef std::function<void(size_t sampleCount, int16_t *samplesLeft, int16_t *samplesRight, float sampleRate)> SampleConsumer;
 
 // A C++ wrapper for pulseaudio + LAME based MP3 playback.
 // Creates it's own threads for doing so.
@@ -72,6 +76,9 @@ class MpegPlayer {
 			ERRORED,
 			IDLE
 		};
+		
+		// Simple callback used so FFT can be PROCESSED.
+		SampleConsumer sampleCallback;
 		
 		// Creates an empty MP3 players.
 		MpegPlayer();

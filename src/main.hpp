@@ -6,6 +6,8 @@ using json = nlohmann::json;
 #include <iostream>
 #include <string>
 
+// Get time in microseconds.
+uint64_t micros();
 // Load and play song by ID.
 void playNow(uint id);
 // Delete song by ID.

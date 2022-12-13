@@ -46,6 +46,11 @@ void MpegPlayer::playerMain() {
 					fixSampleRate();
 				}
 				
+				// Invoke the sample callback, if any.
+				if (sampleCallback) {
+					sampleCallback(sampleCount, leftBuf, rightBuf, sampleRate);
+				}
+				
 				// Send out the samples.
 				combineBuffers();
 				sendAudio();

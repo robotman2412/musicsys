@@ -6,7 +6,7 @@ var songs_queue_playing = {};
 var magnitudes = [0,0,0];
 var sum = [0,0,0];
 var psum = [0,0,0];
-var fft_color;
+var fft_color= 0x0000ff;
 var mouseX = 0;
 var mouseY = 0;
 var mouseButton = -1;
@@ -109,7 +109,7 @@ function fft_loop() {
 		}
 	} else if (graphStyle == 1) {
 		for (i = 0; i < numBars; i++) {
-			if (psum[i] == undefined) psum[i] = 0;
+			if (!isFinite(psum[i])) psum[i] = 0;
 			psum[i] = Math.max(sum[i], psum[i] - 0.125);
 			ctx.fillRect(i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
 			ctx.fillRect(i * barWidth, canvas.height - psum[i] * scale * canvas.height, barWidth, barWidth * 0.5);
@@ -349,10 +349,10 @@ function handle_message(data) {
 	if (data.fft_data != undefined) {
 		magnitudes = data.fft_data;
 		for (i = 0; i < magnitudes.length; i++) {
-			if (sum[i] == undefined) {
+			if (!isFinite(sum[i])) {
 				sum[i] = 0;
 			}
-			sum[i] += (60 + magnitudes[i] - sum[i]) * 0.07;
+			sum[i] += (magnitudes[i] - sum[i]) * 0.07;
 		}
 	}
 	if (data.fft_color != undefined) {
