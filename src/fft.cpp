@@ -57,26 +57,29 @@ void SineProvider::increment() {
 
 
 // Rolling sum initialised with default values.
-template <typename Num, size_t COUNT>
-RollingSum<Num, COUNT>::RollingSum() {
-	buffer = new Num[COUNT];
+template <typename Num>
+RollingSum<Num>::RollingSum(size_t length) {
+	buffer = new Num[length];
+	this->length = length;
 	index  = 0;
 	clear();
 }
 
 // Rolling sum initialised with specific values.
-template <typename Num, size_t COUNT>
-RollingSum<Num, COUNT>::RollingSum(const Num &value) {
-	buffer = new Num[COUNT];
+template <typename Num>
+RollingSum<Num>::RollingSum(const Num &value, size_t length) {
+	buffer = new Num[length];
+	this->length = length;
 	index  = 0;
 	clear(value);
 }
 
 // Copy constructor.
-template <typename Num, size_t COUNT>
-RollingSum<Num, COUNT>::RollingSum(const RollingSum<Num, COUNT> &other) {
-	buffer = new Num[COUNT];
-	for (size_t i = 0; i < COUNT; i++) {
+template <typename Num>
+RollingSum<Num>::RollingSum(const RollingSum<Num> &other) {
+	length = other.length;
+	buffer = new Num[length];
+	for (size_t i = 0; i < length; i++) {
 		buffer[i] = other.buffer[i];
 	}
 	sum   = other.sum;
@@ -84,77 +87,136 @@ RollingSum<Num, COUNT>::RollingSum(const RollingSum<Num, COUNT> &other) {
 }
 
 // Destructor.
-template <typename Num, size_t COUNT>
-RollingSum<Num, COUNT>::~RollingSum() {
+template <typename Num>
+RollingSum<Num>::~RollingSum() {
 	delete[] buffer;
 }
 
 
 // Get current sum.
-template <typename Num, size_t COUNT>
-Num RollingSum<Num, COUNT>::get() {
+template <typename Num>
+Num RollingSum<Num>::get() {
 	return sum;
 }
 
 // Insert new value into sum.
 // Returns new sum.
-template <typename Num, size_t COUNT>
-Num RollingSum<Num, COUNT>::insert(Num next) {
+template <typename Num>
+Num RollingSum<Num>::insert(Num next) {
 	sum -= buffer[index];
 	buffer[index] = next;
 	sum += next;
-	index = (index + 1) % COUNT;
+	index = (index + 1) % length;
 	return sum;
 }
 
 // Clear to default.
 // Returns new sum.
-template <typename Num, size_t COUNT>
-Num RollingSum<Num, COUNT>::clear(Num value) {
-	for (size_t i = 0; i < COUNT; i++) {
+template <typename Num>
+Num RollingSum<Num>::clear(Num value) {
+	for (size_t i = 0; i < length; i++) {
 		buffer[i] = value;
 	}
-	sum = value * COUNT;
+	sum = value * length;
 	return sum;
+}
+
+// Get current length.
+template <typename Num>
+size_t RollingSum<Num>::getLength() {
+	return length;
 }
 
 
 
 // Rolling average initialised with default values.
-template <typename Num, size_t COUNT>
-RollingAverage<Num, COUNT>::RollingAverage() {}
+template <typename Num>
+RollingAverage<Num>::RollingAverage(size_t length) {
+	sum = RollingSum(length);
+}
 
 // Rolling average initialised with specific values.
-template <typename Num, size_t COUNT>
-RollingAverage<Num, COUNT>::RollingAverage(const Num &value) {
-	sum = RollingSum(value);
+template <typename Num>
+RollingAverage<Num>::RollingAverage(const Num &value, size_t length) {
+	sum = RollingSum(value, length);
 }
 
 // Copy constructor.
-template <typename Num, size_t COUNT>
-RollingAverage<Num, COUNT>::RollingAverage(const RollingAverage<Num, COUNT> &other) {
+template <typename Num>
+RollingAverage<Num>::RollingAverage(const RollingAverage<Num> &other) {
 	sum = other.sum;
 }
 
 
 // Get current average.
-template <typename Num, size_t COUNT>
-Num RollingAverage<Num, COUNT>::get() {
-	return sum.get() / COUNT;
+template <typename Num>
+Num RollingAverage<Num>::get() {
+	return sum.get() / sum.getLength();
 }
 
 // Insert new value into average.
 // Returns new average.
-template <typename Num, size_t COUNT>
-Num RollingAverage<Num, COUNT>::insert(Num next) {
-	return sum.insert(next) / COUNT;
+template <typename Num>
+Num RollingAverage<Num>::insert(Num next) {
+	return sum.insert(next) / sum.getLength();
 }
 
 // Clear to default.
 // Returns new average.
-template <typename Num, size_t COUNT>
-Num RollingAverage<Num, COUNT>::clear(Num value) {
-	return sum.clear(value) / COUNT;
+template <typename Num>
+Num RollingAverage<Num>::clear(Num value) {
+	return sum.clear(value) / sum.getLength();
 }
 
+// Get current length.
+template <typename Num>
+size_t RollingAverage<Num>::getLength() {
+	return sum.getLength();
+}
+
+
+
+// Make a new FFT with given sine frequency.
+template <typename Num>
+FFT<Num>::FFT(float freq, float sampleRate, float outputRate, float timeSpan) {
+	// Copy raw parameters.
+	this->freq       = freq;
+	this->sampleRate = sampleRate;
+	this->outputRate = outputRate;
+	this->timeSpan   = timeSpan;
+	
+	// Feed frequency into sine provider.
+	theSine = SineProvider(freq, sampleRate);
+	
+	// Calculate size of rolling average.
+	size_t samples = timeSpan * newRate;
+	average = RollingAverage(Num(), samples);
+}
+
+
+// Update sample rate.
+template <typename Num>
+void FFT<Num>::setSampleRate(float newRate) {
+	if (sampleRate != newRate) {
+		// Update sine provider with new frequency.
+		sampleRate = newRate;
+		theSine.setIncFreq(freq, sampleRate);
+		
+		// Recalculate size of rolling average.
+		size_t samples = timeSpan * newRate;
+		average = RollingAverage(Num(), samples);
+	}
+}
+
+// Feed new samples and receive FFT data.
+template <typename Num>
+std::vector<Num> FFT<Num>::feedSamples(size_t sampleCount, Num *samples) {
+	
+}
+
+// Feed new samples and receive FFT data.
+template <typename Num>
+std::vector<Num> FFT<Num>::feedSamples(std::vector<Num> samples) {
+	return feedSamples(samples.size(), &samples[0]);
+}
 
