@@ -13,8 +13,10 @@
 #include <pulse/simple.h>
 #include <pulse/error.h>
 
+extern int64_t micros();
+
 // A callback for consuming audio samples.
-typedef std::function<void(size_t sampleCount, int16_t *samplesLeft, int16_t *samplesRight, float sampleRate)> SampleConsumer;
+typedef std::function<void(double songTime, size_t sampleCount, int16_t *samplesLeft, int16_t *samplesRight, double sampleRate)> SampleConsumer;
 
 // A C++ wrapper for pulseaudio + LAME based MP3 playback.
 // Creates it's own threads for doing so.
@@ -42,13 +44,17 @@ class MpegPlayer {
 		// True when there are no errors and it is not the end of the file.
 		volatile bool  isPlayable;
 		// Duration, or NaN if unknown.
-		volatile float playDuration;
+		volatile double playDuration;
 		// Current playback time.
-		volatile float currentTime;
+		volatile double currentTime;
+		// Previous value of currentTime, used for tell().
+		volatile double lastTime;
+		// Last time at which a set of samples was sent.
+		volatile int64_t sampleTime;
 		// Current playback volume.
-		volatile float volume;
+		volatile double volume;
 		// Current playback sample rate.
-		volatile float sampleRate;
+		volatile double sampleRate;
 		
 		// (Owner: player thread) Amount of samples in the buffers.
 		ssize_t     sampleCount;
@@ -101,15 +107,15 @@ class MpegPlayer {
 		
 		// Determine duration in seconds.
 		// Returns NaN if unknown.
-		float duration();
+		double duration();
 		// Seek to point in seconds.
 		// Returns point seeked to.
-		float seek(float to);
+		double seek(double to);
 		// Tells current time.
-		float tell();
+		double tell();
 		
 		// Set the new desired volume.
-		void setVolume(float volume);
+		void setVolume(double volume);
 		// Get the current volume.
-		float getVolume();
+		double getVolume();
 };

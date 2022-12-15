@@ -5,7 +5,7 @@
 #include <iostream>
 #include <functional>
 
-#define BUFFER_SAMPLES 44100
+#define BUFFER_SAMPLES 1000000
 #define VOLUME_MINIMUM 0
 #define VOLUME_MAXIMUM 1.5
 
@@ -47,17 +47,21 @@ void MpegPlayer::playerMain() {
 				}
 				
 				// Invoke the sample callback, if any.
+				playMtx.lock();
 				if (sampleCallback) {
-					sampleCallback(sampleCount, leftBuf, rightBuf, sampleRate);
+					sampleCallback(currentTime, sampleCount, leftBuf, rightBuf, sampleRate);
 				}
+				
+				// Update current time.
+				lastTime     = currentTime;
+				sampleTime   = micros();
+				currentTime += sampleCount / (double) mp3_type.samplerate;
+				playDuration = mp3_type.nsamp / (double) mp3_type.samplerate;
+				playMtx.unlock();
 				
 				// Send out the samples.
 				combineBuffers();
 				sendAudio();
-				
-				// Update current time.
-				currentTime += sampleCount / (float) mp3_type.samplerate;
-				playDuration = mp3_type.nsamp / (float) mp3_type.samplerate;
 			}
 		} else {
 			usleep(50000);
@@ -67,7 +71,7 @@ void MpegPlayer::playerMain() {
 
 // (Owner: player thread) Merge left and right into combined.
 void MpegPlayer::combineBuffers() {
-	float vol = volume * volume;
+	double vol = volume * volume;
 	for (size_t i = 0; i < sampleCount; i++) {
 		combinedBuf[i*2+0] = leftBuf [i] * vol;
 		combinedBuf[i*2+1] = rightBuf[i] * vol;
@@ -112,12 +116,14 @@ MpegPlayer::MpegPlayer():
 	isAlive  (true) {
 	isFinished   = false;
 	currentTime  = 0;
+	lastTime     = 0;
 	playDuration = 0;
 	currentFd    = NULL;
 	leftBuf      = new int16_t[BUFFER_SAMPLES];
 	rightBuf     = new int16_t[BUFFER_SAMPLES];
 	combinedBuf  = new int16_t[BUFFER_SAMPLES * 2];
 	volume       = 1;
+	sampleTime   = micros();
 	
 	sampleRate = 44100;
 	const pa_sample_spec ss = {
@@ -166,6 +172,7 @@ void MpegPlayer::loadFile(std::string path) {
 		isPlayable = false;
 	}
 	currentTime = 0;
+	lastTime    = 0;
 	
 	playMtx.unlock();
 }
@@ -199,6 +206,7 @@ void MpegPlayer::clear() {
 	isPlaying   = false;
 	currentFd   = NULL;
 	currentTime = 0;
+	lastTime    = 0;
 	
 	playMtx.unlock();
 }
@@ -223,24 +231,30 @@ void MpegPlayer::acknowledge() {
 
 // Determine duration in seconds.
 // Returns NaN if unknown.
-float MpegPlayer::duration() {
+double MpegPlayer::duration() {
 	return playDuration;
 }
 
 // Seek to point in seconds.
 // Returns point seeked to.
-float MpegPlayer::seek(float to) {
+double MpegPlayer::seek(double to) {
 	return currentTime;
 }
 
 // Seek to point in seconds.
 // Returns point seeked to.
-float MpegPlayer::tell() {
-	return currentTime;
+double MpegPlayer::tell() {
+	std::lock_guard lock(playMtx);
+	
+	if (isPlaying) {
+		return lastTime + (micros() - sampleTime) / 1000000.0;
+	} else {
+		return currentTime;
+	}
 }
 
 // Set the new desired volume.
-void MpegPlayer::setVolume(float volume) {
+void MpegPlayer::setVolume(double volume) {
 	playMtx.lock();
 	if (volume > VOLUME_MAXIMUM) volume = VOLUME_MAXIMUM;
 	if (volume < VOLUME_MINIMUM) volume = VOLUME_MINIMUM;
@@ -249,6 +263,6 @@ void MpegPlayer::setVolume(float volume) {
 }
 
 // Get the current volume.
-float MpegPlayer::getVolume() {
+double MpegPlayer::getVolume() {
 	return volume;
 }

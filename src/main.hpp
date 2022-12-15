@@ -7,7 +7,7 @@ using json = nlohmann::json;
 #include <string>
 
 // Get time in microseconds.
-uint64_t micros();
+int64_t micros();
 // Load and play song by ID.
 void playNow(uint id);
 // Delete song by ID.
@@ -20,3 +20,5 @@ void skipSong();
 void removeFromQueue(size_t index);
 // Broadcast song status.
 void sendSongStatus();
+// Broadcast FFT data.
+void sendFFTStatus();

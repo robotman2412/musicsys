@@ -19,25 +19,43 @@
 #include <sys/time.h>
 
 #include <queue>
+#include <async_queue.hpp>
 
 #include <pulse/simple.h>
 #include <pulse/error.h>
 
-#define BUFSIZE 44100
-
 #include <lame/lame.h>
 
+#define FFT_WIDTH 100
+#define FFT_TYPE int32_t
+#define USE_FFT_SCALE 1
+#define GRAPH_STYLES 3
+int graphStyle = 0;
+int graphColorIndex = 0;
+
+static uint32_t graphColors[] = {
+	0xff0000,
+	0xffff00,
+	0x00ff00,
+	0x0000ff,
+};
+static const size_t numGraphColors = sizeof(graphColors) / sizeof(uint32_t);
+
 MpegPlayer player;
-Song       nowPlaying;
-uint new_id_index = 0;
+Song nowPlaying;
+
 std::vector<Song> queue;
 uint64_t queue_index = 0;
+
 std::map<uint, Song> songs;
 std::vector<Download *> downloads;
-FFTSpectrum<int16_t> spectrum;
-std::mutex fftMutex;
-std::queue<std::vector<int16_t>> analysed;
-float fftRate = 60;
+uint new_id_index = 0;
+
+FFTSpectrum<FFT_TYPE> spectrum;
+ASQueue<FFTData<FFT_TYPE>> analysed;
+FFTData<FFT_TYPE> fftCur;
+FFTData<FFT_TYPE> fftLast;
+float fftRate = 60.0;
 
 int main(int argc, char **argv) {
 	// Start servers.
@@ -56,24 +74,22 @@ int main(int argc, char **argv) {
 	std::cout << "Next song id: " << new_id_index << std::endl;
 	
 	// Create the testing FFT..
-	player.sampleCallback = [](size_t sampleCount, int16_t *left, int16_t *right, float sampleRate) -> void {
+	player.sampleCallback = [](double songTime, size_t sampleCount, int16_t *left, int16_t *right, float sampleRate) -> void {
 		// Create a temporary buffer.
-		std::vector<int16_t> sampleBuf;
+		std::vector<FFT_TYPE> sampleBuf;
 		sampleBuf.resize(sampleCount);
 		
 		// Mix samples into a buffer.
 		for (size_t i = 0; i < sampleCount; i++) {
-			sampleBuf[i] = left[i] + right[i];
+			sampleBuf[i] = (FFT_TYPE) left[i] + (FFT_TYPE) right[i];
 		}
 		
 		// Send samples through FFT.
-		std::lock_guard lock(fftMutex);
 		size_t i = 0;
-		for (std::vector<int16_t> &entry: spectrum.feedSamples(sampleBuf)) {
-			analysed.emplace(entry);
+		for (FFTData<FFT_TYPE> &entry: spectrum.feedSamples(songTime, sampleBuf)) {
+			analysed.send(entry);
 			i++;
 		}
-		std::cout << "In: " << sampleCount << ", Out: " << i << std::endl;
 	};
 	
 	// Default volume.
@@ -84,36 +100,37 @@ int main(int argc, char **argv) {
 	while (1) {
 		sendSongStatus();
 		if (player.getStatus() == MpegPlayer::FINISHED) {
-			if (queue.size()) {
-				// Load more from queue
-				Song next = queue[0];
-				removeFromQueue(next.index);
-				playNow(next.id);
-			} else {
-				player.acknowledge();
-				broadcast("{\"now_playing_nothing\":true}");
-				nowPlaying = Song();
-			}
+			player.acknowledge();
+			skipSong();
+			nextTime += (uint64_t) ((double) 1000000 / fftRate);
 			
 		} else if (player.getStatus() == MpegPlayer::PLAYING) {
-			nextTime += 1000000 / fftRate;
-			
-			// Am send FFT data?
-			std::lock_guard lock(fftMutex);
-			if (analysed.size()) {
-				std::vector<int16_t> analisys = analysed.front();
-				analysed.pop();
-				json arr = json::array();
-				for (auto i: analisys) arr.push_back(i);
-				json obj;
-				obj["fft_data"] = arr;
-				broadcast(obj.dump());
+			if (fftCur.coeff.size()) {
+				// Am send FFT data?
+				sendFFTStatus();
 			}
+			
+			if (analysed.tryRecv(fftCur)) {
+				// Use timestamp from FFT datas.
+				double dt = fftCur.songTime - player.tell();
+				nextTime  = micros() + dt * 1000000;
+				
+			} else {
+				// Invalidate FFT datas.
+				fftCur.coeff.clear();
+				nextTime += 100000;
+			}
+			
 		} else {
 			nextTime = micros() + 100000;
 		}
 		
-		usleep(nextTime - micros());
+		int64_t tdel = nextTime - micros();
+		if (tdel > 0) {
+			usleep(tdel);
+		} else {
+			nextTime = micros();
+		}
 	}
 	
 	// Close servers.
@@ -123,10 +140,10 @@ int main(int argc, char **argv) {
 }
 
 // Get time in microseconds.
-uint64_t micros() {
+int64_t micros() {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return tv.tv_sec * 1000000 + tv.tv_usec;
+	return (uint64_t) tv.tv_sec * 1000000ULL + tv.tv_usec;
 }
 
 // Handle a new connecting socket.
@@ -249,6 +266,35 @@ void sendSongStatus() {
 	broadcast(msg.dump());
 }
 
+// Broadcast FFT data.
+void sendFFTStatus() {
+	// Create an array to pack data into.
+	json arr = json::array();
+	
+	// Prepare FFT data.
+#if USE_FFT_SCALE
+	// Determine scaling parameters.
+	double min = 0.6/30;
+	double max = 1.5/30;
+	double inc = (max - min) / (fftCur.coeff.size() - 1);
+	double cur = min;
+	
+	// Scale datas.
+	for (size_t i = 0; i < fftCur.coeff.size(); i++, cur += inc) {
+		arr.push_back(abs(fftCur.coeff[i] * cur));
+	}
+#else
+	for (auto i: analisys) arr.push_back(abs(i/30.0));
+#endif
+	
+	// Send message.
+	json obj;
+	obj["fft_data"] = arr;
+	broadcast(obj.dump());
+	
+	fftLast = fftCur;
+}
+
 // Load and play song by ID.
 void playNow(uint id) {
 	if (!songs[id].valid) return;
@@ -257,18 +303,34 @@ void playNow(uint id) {
 	player.loadFile(path);
 	player.start();
 	if (player.getStatus() == MpegPlayer::PLAYING) {
-		// This indicates successful loading.
+		// Clear FFT queue so the FFT doesn't break.
+		analysed.clear();
+		
+		// Switch up graph style.
+		graphStyle = (graphStyle + 1) % GRAPH_STYLES;
+		
+		// Set now playing.
 		nowPlaying = songs[id];
 		nowPlaying.currentTime = 0;
+		
+		// Broadcast now playing.
 		json msg;
 		msg["song_now_playing"] = nowPlaying.toJson();
 		msg["playing"] = true;
+		msg["graph_style"] = graphStyle;
 		broadcast(msg.dump());
+		std::cout << "Now playing: " << songs[id].name << std::endl;
 	}
 }
 
 // Skips the current song.
 void skipSong() {
+	// Stop player.
+	player.pause();
+	
+	// Clear FFT queue.
+	analysed.clear();
+	
 	if (queue.size()) {
 		// Load more from queue
 		Song next = queue[0];

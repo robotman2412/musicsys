@@ -358,8 +358,8 @@ function handle_message(data) {
 	if (data.fft_color != undefined) {
 		fft_color = data.fft_color;
 	}
-	if (data.graph_type != undefined) {
-		graphStyle = data.graph_type;
+	if (data.graph_style != undefined) {
+		graphStyle = data.graph_style;
 	}
 }
 

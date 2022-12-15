@@ -10,28 +10,28 @@
 class SineProvider {
 	protected:
 		// Current sine/cosine values.
-		float curCos, curSin;
+		double curCos, curSin;
 		// Increment sine/cosine values.
-		float incCos, incSin;
+		double incCos, incSin;
 		
 	public:
 		// Result pair.
 		struct Pair {
-			float cosine;
-			float sine;
+			double cosine;
+			double sine;
 		};
 		
 		// Default sine provider with increment PI/2.
 		SineProvider();
 		// Update increment as angle.
-		SineProvider(float angle);
+		SineProvider(double angle);
 		// Update increment as frequency.
-		SineProvider(float sineHertz, float sampleHertz);
+		SineProvider(double sineHertz, double sampleHertz);
 		
 		// Update increment as angle.
-		void setIncAngle(float angle);
+		void setIncAngle(double angle);
 		// Update increment as frequency.
-		void setIncFreq(float sineHertz, float sampleHertz);
+		void setIncFreq(double sineHertz, double sampleHertz);
 		
 		// Peek sine/cosine pair.
 		Pair peek();
@@ -103,31 +103,44 @@ template <typename Num> class FFT {
 		// Rolling average used to calculate FFT.
 		RollingAverage<Num> average;
 		// Desired frequency.
-		float freq;
+		double freq;
 		// Current sample rate.
-		float sampleRate;
+		double sampleRate;
 		// Output rate in analisys outputs per second.
-		float outputRate;
+		double outputRate;
 		// Time span to analyse in seconds, usually longer than output interval.
 		// Enforced to never be shorter than output interval.
-		float timeSpan;
+		double timeSpan;
 		// Amount of samples needed for a new analisys point.
-		size_t missing;
+		double missing;
 		
 	public:
 		// Make a new FFT with given sine frequency.
 		// Output rate in analisys points per second.
 		// Time span for analisys in seconds.
-		FFT(float freq=440, float sampleRate=44100, float outputRate=60, float timeSpan=1/30.0);
+		FFT(double freq=440, double sampleRate=44100, double outputRate=60, double timeSpan=1/45.0);
 		
 		// Update sample rate.
-		void setSampleRate(float newRate);
+		void setSampleRate(double newRate);
 		// Feed new samples and receive FFT data.
 		// It is not gauranteed that this will output more than zero points.
 		std::vector<Num> feedSamples(size_t sampleCount, Num *samples);
 		// Feed new samples and receive FFT data.
 		// It is not gauranteed that this will output more than zero points.
 		std::vector<Num> feedSamples(std::vector<Num> samples);
+		// Feed new samples and receive FFT data.
+		// It is not gauranteed that this will output more than zero points.
+		std::vector<Num> feedSamples(double songTime, std::vector<double> &times, size_t sampleCount, Num *samples);
+		// Feed new samples and receive FFT data.
+		// It is not gauranteed that this will output more than zero points.
+		std::vector<Num> feedSamples(double songTime, std::vector<double> &times, std::vector<Num> samples);
+};
+
+// A single spectrum analisys output.
+template <typename Num>
+struct FFTData {
+	std::vector<Num> coeff;
+	double songTime;
 };
 
 // Multiple channel's worth of FFT.
@@ -136,9 +149,9 @@ template <typename Num> class FFTSpectrum {
 		// Internal FFT calculators.
 		std::vector<FFT<Num>> channels;
 		// Lowest frequency.
-		float freqLow;
+		double freqLow;
 		// Highest frequency.
-		float freqHigh;
+		double freqHigh;
 		// Amount of channels.
 		size_t channelCount;
 		// Thread that handles incoming FFT data.
@@ -147,16 +160,16 @@ template <typename Num> class FFTSpectrum {
 		// Make a new FFT spectrum.
 		// Output rate in analisys points per second.
 		// Time span for analisys in seconds.
-		FFTSpectrum(float freqLow=20, float freqHigh=5000, size_t channelCount=100);
+		FFTSpectrum(double freqLow=20, double freqHigh=5000, size_t channelCount=100);
 		
 		// Update sample rate.
-		void setSampleRate(float newRate);
+		void setSampleRate(double newRate);
 		// Feed new samples and receive FFT data.
 		// It is not gauranteed that this will output more than zero points.
-		std::vector<std::vector<Num>> feedSamples(size_t sampleCount, Num *samples);
+		std::vector<FFTData<Num>> feedSamples(double songTime, size_t sampleCount, Num *samples);
 		// Feed new samples and receive FFT data.
 		// It is not gauranteed that this will output more than zero points.
-		std::vector<std::vector<Num>> feedSamples(std::vector<Num> samples);
+		std::vector<FFTData<Num>> feedSamples(double songTime, std::vector<Num> samples);
 };
 
 #include "fft.impl.hpp"

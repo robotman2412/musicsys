@@ -72,21 +72,21 @@ RollingAverage<Num>::RollingAverage(const Num &value, size_t length) {
 // Get current average.
 template <typename Num>
 Num RollingAverage<Num>::get() {
-	return sum.get() / sum.getLength();
+	return sum.get() / (ssize_t) sum.getLength();
 }
 
 // Insert new value into average.
 // Returns new average.
 template <typename Num>
 Num RollingAverage<Num>::insert(Num next) {
-	return sum.insert(next) / sum.getLength();
+	return sum.insert(next) / (ssize_t) sum.getLength();
 }
 
 // Clear to default.
 // Returns new average.
 template <typename Num>
 Num RollingAverage<Num>::clear(Num value) {
-	return sum.clear(value) / sum.getLength();
+	return sum.clear(value) / (ssize_t) sum.getLength();
 }
 
 // Get current length.
@@ -99,7 +99,7 @@ size_t RollingAverage<Num>::getLength() {
 
 // Make a new FFT with given sine frequency.
 template <typename Num>
-FFT<Num>::FFT(float freq, float sampleRate, float outputRate, float timeSpan) {
+FFT<Num>::FFT(double freq, double sampleRate, double outputRate, double timeSpan) {
 	// Check parameters.
 	if (timeSpan < 1/outputRate) {
 		timeSpan = 1/outputRate;
@@ -123,7 +123,7 @@ FFT<Num>::FFT(float freq, float sampleRate, float outputRate, float timeSpan) {
 
 // Update sample rate.
 template <typename Num>
-void FFT<Num>::setSampleRate(float newRate) {
+void FFT<Num>::setSampleRate(double newRate) {
 	if (sampleRate != newRate) {
 		// Update sine provider with new frequency.
 		sampleRate = newRate;
@@ -142,24 +142,24 @@ std::vector<Num> FFT<Num>::feedSamples(size_t sampleCount, Num *samples) {
 	std::vector<Num> out;
 	
 	// Determine samples per output point.
-	size_t sampleSpan = sampleRate / outputRate;
+	double sampleSpan = sampleRate / outputRate;
 	
 	// Iterate over incoming samples.
 	for (size_t i = 0; i < sampleCount; i++) {
 		// When fully filled with samples, take the average.
-		if (missing == 0) {
+		if (missing <= 0) {
 			out.push_back(average.get());
-			missing = sampleSpan;
+			missing += sampleSpan;
 		}
 		
 		// Generate a new cosine.
-		float cosine = theSine.consume().cosine;
+		double cosine = theSine.consume().cosine;
 		// Multiply it with the sample.
 		Num   sample = samples[i] * cosine;
 		// Append the multiplied sample to the rolling average.
 		average.insert(sample);
 		// Decrement the amount of missing things.
-		missing --;
+		missing -= 1;
 	}
 	
 	return out;
@@ -172,24 +172,66 @@ std::vector<Num> FFT<Num>::feedSamples(std::vector<Num> samples) {
 	return feedSamples(samples.size(), samples.data());
 }
 
+// Feed new samples and receive FFT data.
+// It is not gauranteed that this will output more than zero points.
+template <typename Num>
+std::vector<Num> FFT<Num>::feedSamples(double songTime, std::vector<double> &times, size_t sampleCount, Num *samples) {
+	std::vector<Num> out;
+	
+	// Determine samples per output point.
+	double sampleSpan = sampleRate / outputRate;
+	
+	// Determine time delta per sample.
+	double deltaTime  = 1.0 / sampleRate;
+	
+	// Iterate over incoming samples.
+	for (size_t i = 0; i < sampleCount; i++) {
+		// When fully filled with samples, take the average.
+		if (missing <= 0) {
+			out.push_back(average.get());
+			times.push_back(songTime);
+			missing += sampleSpan;
+		}
+		
+		// Generate a new cosine.
+		double cosine = theSine.consume().cosine;
+		// Multiply it with the sample.
+		Num   sample = samples[i] * cosine;
+		// Append the multiplied sample to the rolling average.
+		average.insert(sample);
+		// Decrement the amount of missing things.
+		missing -= 1;
+		// The time countening.
+		songTime += deltaTime;
+	}
+	
+	return out;
+}
+
+// Feed new samples and receive FFT data.
+// It is not gauranteed that this will output more than zero points.
+template <typename Num>
+std::vector<Num> FFT<Num>::feedSamples(double songTime, std::vector<double> &times, std::vector<Num> samples) {
+	return feedSamples(songTime, times, samples.size(), samples.data());
+}
 
 
 // Make a new FFT spectrum.
 // Output rate in analisys points per second.
 // Time span for analisys in seconds.
 template <typename Num>
-FFTSpectrum<Num>::FFTSpectrum(float freqLow, float freqHigh, size_t channelCount) {
+FFTSpectrum<Num>::FFTSpectrum(double freqLow, double freqHigh, size_t channelCount) {
 	// Store raw parameters.
 	this->freqLow      = freqLow;
 	this->freqHigh     = freqHigh;
 	this->channelCount = channelCount;
 	
 	// Determine frequency gap between channels.
-	float freqGap = (freqHigh - freqLow) / (channelCount - 1);
+	double freqGap = (freqHigh - freqLow) / (channelCount - 1);
 	
 	// Make FFTs within the spectrum.
 	for (size_t i = 0; i < channelCount; i++) {
-		float freq = freqLow + i * freqGap;
+		double freq = freqLow + i * freqGap;
 		channels.push_back(FFT<Num>(freq));
 	}
 }
@@ -197,7 +239,7 @@ FFTSpectrum<Num>::FFTSpectrum(float freqLow, float freqHigh, size_t channelCount
 
 // Update sample rate.
 template <typename Num>
-void FFTSpectrum<Num>::setSampleRate(float newRate) {
+void FFTSpectrum<Num>::setSampleRate(double newRate) {
 	for (FFT<Num> &fft: channels) {
 		fft.setSampleRate(newRate);
 	}
@@ -206,23 +248,34 @@ void FFTSpectrum<Num>::setSampleRate(float newRate) {
 // Feed new samples and receive FFT data.
 // It is not gauranteed that this will output more than zero points.
 template <typename Num>
-std::vector<std::vector<Num>> FFTSpectrum<Num>::feedSamples(size_t sampleCount, Num *samples) {
-	std::vector<std::vector<Num>> out;
-	std::vector<Num> tmp;
-	tmp.resize(channelCount);
+std::vector<FFTData<Num>> FFTSpectrum<Num>::feedSamples(double songTime, size_t sampleCount, Num *samples) {
+	std::vector<FFTData<Num>> out;
+	FFTData<Num> tmp;
+	tmp.coeff.resize(channelCount);
 	
-	for (size_t x = 0; x < channelCount; x++) {
+	// First channel FFT + time.
+	std::vector<double> times;
+	std::vector<Num> datas = channels[0].feedSamples(songTime, times, sampleCount, samples);
+	
+	// Make sure there are enough output datas.
+	out.reserve(datas.size());
+	while (out.size() < datas.size()) {
+		out.push_back(tmp);
+	}
+	
+	// Insert data elements.
+	for (size_t y = 0; y < datas.size(); y++) {
+		out[y].songTime = times[y];
+		out[y].coeff[0] = datas[y];
+	}
+	
+	for (size_t x = 1; x < channelCount; x++) {
 		FFT<Num> &channel = channels[x];
-		std::vector<Num> datas = channel.feedSamples(sampleCount, samples);
-		
-		// Make sure there are enough output datas.
-		while (out.size() < datas.size()) {
-			out.push_back(tmp);
-		}
+		datas = channel.feedSamples(sampleCount, samples);
 		
 		// Insert data elements.
 		for (size_t y = 0; y < datas.size(); y++) {
-			out[y][x] = datas[y];
+			out[y].coeff[x] = datas[y];
 		}
 	}
 	
@@ -232,6 +285,6 @@ std::vector<std::vector<Num>> FFTSpectrum<Num>::feedSamples(size_t sampleCount, 
 // Feed new samples and receive FFT data.
 // It is not gauranteed that this will output more than zero points.
 template <typename Num>
-std::vector<std::vector<Num>> FFTSpectrum<Num>::feedSamples(std::vector<Num> samples) {
-	return feedSamples(samples.size(), samples.data());
+std::vector<FFTData<Num>> FFTSpectrum<Num>::feedSamples(double songTime, std::vector<Num> samples) {
+	return feedSamples(songTime, samples.size(), samples.data());
 }

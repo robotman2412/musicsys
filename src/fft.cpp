@@ -9,14 +9,14 @@ SineProvider::SineProvider() {
 }
 
 // Update increment as angle.
-SineProvider::SineProvider(float angle) {
+SineProvider::SineProvider(double angle) {
 	curCos = 1;
 	curSin = 0;
 	setIncAngle(angle);
 }
 
 // Update increment as frequency.
-SineProvider::SineProvider(float sineHertz, float sampleHertz) {
+SineProvider::SineProvider(double sineHertz, double sampleHertz) {
 	curCos = 1;
 	curSin = 0;
 	setIncFreq(sineHertz, sampleHertz);
@@ -24,13 +24,13 @@ SineProvider::SineProvider(float sineHertz, float sampleHertz) {
 
 
 // Update increment as angle.
-void SineProvider::setIncAngle(float angle) {
+void SineProvider::setIncAngle(double angle) {
 	incCos = cosf(angle);
 	incSin = sinf(angle);
 }
 
 // Update increment as frequency.
-void SineProvider::setIncFreq(float sineHertz, float sampleHertz) {
+void SineProvider::setIncFreq(double sineHertz, double sampleHertz) {
 	setIncAngle(M_PI * 2 * sineHertz / sampleHertz);
 }
 
@@ -49,7 +49,7 @@ SineProvider::Pair SineProvider::consume() {
 
 // Increment to next state.
 void SineProvider::increment() {
-	float cos0 = curCos, sin0 = curSin;
+	double cos0 = curCos, sin0 = curSin;
 	
 	// Fancy multiplication.
 	curCos = incCos * cos0 - incSin * sin0;
