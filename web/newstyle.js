@@ -217,7 +217,7 @@ function start_web_soc() {
 		};
 
 		ws.onmessage = function (evt) {
-			console.log(evt.data);
+			// console.log(evt.data);
 			var data = JSON.parse(evt.data);
 			handle_message(data);
 		};
@@ -366,6 +366,9 @@ function handle_message(data) {
 	}
 	if (data.graph_style != undefined) {
 		graphStyle = data.graph_style;
+	}
+	if (data.upload_prog != undefined) {
+		handle_upload_message(data.upload_prog);
 	}
 }
 

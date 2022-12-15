@@ -13,6 +13,10 @@ class SineProvider {
 		double curCos, curSin;
 		// Increment sine/cosine values.
 		double incCos, incSin;
+		// Current angle.
+		double curAngle;
+		// Current angle increment.
+		double curInc;
 		
 	public:
 		// Result pair.

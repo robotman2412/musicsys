@@ -8,7 +8,7 @@
 
 #include "data.hpp"
 
-// An asynchronous downloader.
+// An asynchronous downloader using yt-dlp.
 class Download {
 	public:
 		// Callback for when finish, whether error or success.

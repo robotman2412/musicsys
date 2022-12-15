@@ -2,12 +2,16 @@
 
 <html>
 	<head>
+		<!-- Assets !-->
 		<link rel="stylesheet" href="newstyle.css" type="text/css">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
 		<link rel="icon" type="image/x-icon" href="/favicon.ico">
 		<script src="newstyle.js"></script>
+		<script src="file_upload.js"></script>
 		<title id="title_elem">LAN party music system</title>
+		
+		<!-- Template for song list !-->
 		<template id="song_template">
 			<div id="song_meta[id]" class="song-o-new">
 				<div class="song-i">
@@ -28,6 +32,8 @@
 				</div>
 			</div>
 		</template>
+		
+		<!-- Template for song queue !-->
 		<template id="song_in_queue_template">
 			<div id="qsong_meta[index]" class="song-o-new">
 				<div class="song-i">
@@ -41,16 +47,22 @@
 				</div>
 			</div>
 		</template>
+		
+		<!-- Embed information !-->
 		<meta property="og:type" content="website">
 		<meta property="og:title" content="LAN Party music system">
 		<meta property="og:description" content="Gaming!">
 		<meta name="theme-color" content="#6942a2">
 	</head>
+	
 	<body style="font-family:verdana;" onload="onLoad()">
+		<!-- Template building location !-->
 		<div id="templater" style="display: none;"></div>
-		<div class="center-disp"></div>
+		
 		<div id="center" class="center">
 			<h1 id="title_h1">LAN party music system</h1>
+			
+			<!-- Player !-->
 			<div class="fft-canvas-o">
 				<canvas class="fft-canvas" id="fft_canvas"></canvas>
 				<div class="controls" id="controls">
@@ -86,17 +98,25 @@
 			</div>
 			<div id="now_playing_holder" class="holder"></div>
 			<hr>
+			
+			<!-- Song queue container !-->
 			<h2>QUEUE</h2>
 			<div id="song_queue_holder" class="holder"></div>
 			<hr>
+			
+			<!-- Clear queue thingy !-->
 			<h2>ACTIONS</h2>
 			<button onclick="event.button==0&&confirm('Do you want to clear the song queue?')&&clear_queue()" class="wide">CLEAR QUEUE</button>
 			<!-- <input id="add_songs_for_time" class="half-wide" placeholder="15:00"
 			><button class="half-wide" onclick="event.button==0&&add_songs_for_time()">MINUTES OF SONG</button> -->
 			<hr>
+			
+			<!-- Song list !-->
 			<h2>SONGS</h2>
 			<div id="song_holder" class="holder"></div>
 			<hr>
+			
+			<!-- Upload using link form !-->
 			<h2>UPLOAD SONG</h2>
 			<h3>SONG URL</h3>
 			<input onclick="setTimeout(clr_err, 100, 'song_url');" onkeyup="song_question()" onkeydown="song_question()"
@@ -104,14 +124,14 @@
 			<h3>SONG NAME</h3>
 			<input onclick="setTimeout(clr_err, 100, 'song_name');" id="song_name" type="text" class="wide">
 			<button class="wide" onclick="event.button==0&&submit_song()">ADD SONG</button>
-			<!--<hr>
-			<h2>UPLOAD MP3</h2>
+			<hr>
+			
+			<!-- Upload file form !-->
+			<h2>UPLOAD FILE</h2>
 			<h3>SONG NAME</h3>
-			<form id="submission_form" method="post" action="/upload">
-				<input id="song_name_mp3" type="text" class="wide">
-				<input type="file" class="wide" id="mp3_uploader">
-				<button type="submit" class="wide" onclick="upload_mp3()">UPLOAD MP3</button>
-			</form>!-->
+			<input id="song_name_file" type="text" class="wide">
+			<input type="file" class="wide" id="file_uploader">
+			<button type="submit" class="wide" onclick="upload_file()">UPLOAD MP3</button>
 		</div>
 	</body>
 </html>

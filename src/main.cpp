@@ -20,6 +20,7 @@
 
 #include <queue>
 #include <async_queue.hpp>
+#include <ws_upload.hpp>
 
 #include <pulse/simple.h>
 #include <pulse/error.h>
@@ -49,6 +50,7 @@ uint64_t queue_index = 0;
 
 std::map<uint, Song> songs;
 std::vector<Download *> downloads;
+std::map<uint, Upload *> uploads;
 uint new_id_index = 0;
 
 FFTSpectrum<FFT_TYPE> spectrum;
@@ -102,7 +104,6 @@ int main(int argc, char **argv) {
 	// Send metadata from time to time.
 	uint64_t nextTime = micros();
 	while (1) {
-		sendSongStatus();
 		if (player.getStatus() == MpegPlayer::FINISHED) {
 			player.acknowledge();
 			skipSong();
@@ -128,6 +129,8 @@ int main(int argc, char **argv) {
 		} else {
 			nextTime = micros() + 100000;
 		}
+		sendSongStatus();
+		handleDownloads();
 		
 		int64_t tdel = nextTime - micros();
 		if (tdel > 0) {
@@ -172,9 +175,9 @@ void handleAccepted(Messager socket) {
 
 // Handle a new incoming message.
 void handleMessage(Messager socket, std::string in) {
-	std::cout << in << std::endl;
-	
 	json data = json::parse(in);
+	if (!data.contains("upload_file_data")) std::cout << in << std::endl;
+	
 	if (data["set_playing"].is_boolean()) {
 		// Play/pause command.
 		if (data["set_playing"]) player.start();
@@ -258,6 +261,38 @@ void handleMessage(Messager socket, std::string in) {
 		player.seek(data["set_play_current_time"]);
 		analysed.clear();
 		
+	} else if (data["upload_file_init"].is_object()) {
+		// Start upload command.
+		uint id = new_id_index++;
+		uploads[id] = new Upload(id, socket, data["upload_file_init"]);
+		
+	} else if (data["upload_file_data"].is_object() && data["upload_file_data"]["id"].is_number()) {
+		// Upload data.
+		uint id = data["upload_file_data"]["id"];
+		auto iter = uploads.find(id);
+		if (iter == uploads.end()) return;
+		iter->second->handleMessage(socket, data["upload_file_data"]);
+		
+	}
+}
+
+// Handle all upload thing handler devices.
+void handleDownloads() {
+	for (auto iter: uploads) {
+		Upload *ptr = iter.second;
+		if (ptr && !ptr->isAlive()) {
+			Song song = ptr->getSong();
+			if (song.valid) {
+				songs[song.id] = song;
+				json obj;
+				obj["song_meta"] = song.toJson();
+				song.save();
+				broadcast(obj.dump());
+			}
+			
+			uploads[iter.first] = NULL;
+			delete ptr;
+		}
 	}
 }
 
@@ -291,7 +326,7 @@ void sendFFTStatus() {
 	
 	// Create a magic intensity value.
 	for (int i = 0; i < fftCur.coeff.size(); i++) {
-		double val = fftCur.coeff[i] * scale;
+		double val = abs(fftCur.coeff[i] * scale);
 		if (i <= 15) intensity += val * (20 - i) * 0.3;
 		else intensity += val / 9;
 	}

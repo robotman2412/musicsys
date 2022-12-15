@@ -22,3 +22,5 @@ void removeFromQueue(size_t index);
 void sendSongStatus();
 // Broadcast FFT data.
 void sendFFTStatus();
+// Handle all upload thing handler devices.
+void handleDownloads();
