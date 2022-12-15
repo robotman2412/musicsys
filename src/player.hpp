@@ -49,6 +49,8 @@ class MpegPlayer {
 		volatile double currentTime;
 		// Previous value of currentTime, used for tell().
 		volatile double lastTime;
+		// Time used to seek.
+		volatile double seekTime;
 		// Last time at which a set of samples was sent.
 		volatile int64_t sampleTime;
 		// Current playback volume.

@@ -19,6 +19,7 @@ void MpegPlayer::playerMain() {
 			// Lock before attempting to play.
 			playMtx.lock();
 			
+			double nextTime = currentTime;
 			do {
 				// Load bytes from input file.
 				size_t num = fread(raw, 1, sizeof(raw), currentFd);
@@ -35,8 +36,10 @@ void MpegPlayer::playerMain() {
 					isPlaying  = false;
 					isPlayable = false;
 					break;
+				} else if (sampleCount > 0) {
+					nextTime += sampleCount / (double) mp3_type.samplerate;
 				}
-			} while (sampleCount == 0);
+			} while (sampleCount == 0 || nextTime < seekTime);
 			
 			playMtx.unlock();
 			
@@ -55,7 +58,7 @@ void MpegPlayer::playerMain() {
 				// Update current time.
 				lastTime     = currentTime;
 				sampleTime   = micros();
-				currentTime += sampleCount / (double) mp3_type.samplerate;
+				currentTime  = nextTime;
 				playDuration = mp3_type.nsamp / (double) mp3_type.samplerate;
 				playMtx.unlock();
 				
@@ -148,6 +151,7 @@ MpegPlayer::~MpegPlayer() {
 	clear();
 	isAlive = false;
 	player->join();
+	if (currentFd) fclose(currentFd);
 	
 	pa_simple_free(paCtx);
 	delete[] leftBuf;
@@ -207,6 +211,7 @@ void MpegPlayer::clear() {
 	currentFd   = NULL;
 	currentTime = 0;
 	lastTime    = 0;
+	seekTime    = 0;
 	
 	playMtx.unlock();
 }
@@ -238,7 +243,28 @@ double MpegPlayer::duration() {
 // Seek to point in seconds.
 // Returns point seeked to.
 double MpegPlayer::seek(double to) {
-	return currentTime;
+	std::lock_guard lock(playMtx);
+	if (!isSetup) return 0;
+	
+	// Clamp range.
+	if (to < 0) to = 0;
+	if (to > playDuration) to = playDuration;
+	
+	if (to < currentTime) {
+		// Reverse CMD.
+		fseek(currentFd, 0, SEEK_SET);
+		hip_decode_exit(decoder);
+		decoder = hip_decode_init();
+		
+		isFinished  = false;
+		currentTime = 0;
+		lastTime    = 0;
+	}
+	
+	// Forward CMD.
+	seekTime = to;
+	
+	return to;
 }
 
 // Seek to point in seconds.
@@ -246,7 +272,9 @@ double MpegPlayer::seek(double to) {
 double MpegPlayer::tell() {
 	std::lock_guard lock(playMtx);
 	
-	if (isPlaying) {
+	if (currentTime < seekTime) {
+		return seekTime;
+	} else if (isPlaying) {
 		return lastTime + (micros() - sampleTime) / 1000000.0;
 	} else {
 		return currentTime;

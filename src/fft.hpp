@@ -118,7 +118,7 @@ template <typename Num> class FFT {
 		// Make a new FFT with given sine frequency.
 		// Output rate in analisys points per second.
 		// Time span for analisys in seconds.
-		FFT(double freq=440, double sampleRate=44100, double outputRate=60, double timeSpan=1/45.0);
+		FFT(double freq=440, double sampleRate=44100, double outputRate=60, double timeSpan=1/30.0);
 		
 		// Update sample rate.
 		void setSampleRate(double newRate);
@@ -154,7 +154,6 @@ template <typename Num> class FFTSpectrum {
 		double freqHigh;
 		// Amount of channels.
 		size_t channelCount;
-		// Thread that handles incoming FFT data.
 		
 	public:
 		// Make a new FFT spectrum.

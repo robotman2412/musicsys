@@ -3,9 +3,12 @@ var ws;
 var songs = {};
 var song_queue = {};
 var songs_queue_playing = {};
-var magnitudes = [0,0,0];
-var sum = [0,0,0];
-var psum = [0,0,0];
+var magnitudes = [];
+var sum = [];
+var psum = [];
+for (var i = 0; i < 100; i++) {
+	sum[i] = magnitudes[i] = psum[i] = 0;
+}
 var fft_color= 0x0000ff;
 var mouseX = 0;
 var mouseY = 0;
@@ -194,11 +197,13 @@ function restart_web_soc() {
 	document.getElementById("now_playing_holder").innerHTML = "";
 	document.getElementById("song_queue_holder").innerHTML = "";
 	document.getElementById("song_holder").innerHTML = "";
+	set_title("LAN party music system");
 	
 	// Reset state.
 	songs = {};
 	song_queue = {};
 	playing_present = false;
+	main_playing = false;
 	
 	setTimeout(start_web_soc, 1000);
 }
@@ -353,6 +358,7 @@ function handle_message(data) {
 				sum[i] = 0;
 			}
 			sum[i] += (magnitudes[i] - sum[i]) * 0.07;
+			// sum[i] = magnitudes[i]/3;
 		}
 	}
 	if (data.fft_color != undefined) {

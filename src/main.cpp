@@ -249,6 +249,11 @@ void handleMessage(Messager socket, std::string in) {
 		uint id = data["delete_song"];
 		deleteSong(id);
 		
+	} else if (data["set_play_current_time"].is_number()) {
+		// Seek command.
+		player.seek(data["set_play_current_time"]);
+		analysed.clear();
+		
 	}
 }
 
@@ -268,8 +273,40 @@ void sendSongStatus() {
 
 // Broadcast FFT data.
 void sendFFTStatus() {
+	// Used for BEAT DETECT.
+	static double prevAvg    = 0;
+	static double curAvg     = 0;
+	static double prevDelta  = 0;
+	static double curDelta   = 0;
+	static double beatThresh = 3;
+	static bool   beat       = false;
+	
 	// Create an array to pack data into.
+	json obj;
 	json arr = json::array();
+	
+	// Make an average of the FFT data.
+	prevAvg = curAvg;
+	curAvg  = 0;
+	for (size_t i = 0; i < 10; i++) {
+		curAvg += abs(fftCur.coeff[i]);
+	}
+	curAvg /= fftCur.coeff.size();
+	
+	// Make acceleration measurements.
+	prevDelta = curDelta;
+	curDelta  = curAvg / prevAvg;
+	
+	// Determine COEFF.
+	if (curDelta - prevDelta >= beatThresh) {
+		if (!beat) {
+			graphColorIndex = (graphColorIndex + 1) % numGraphColors;
+			obj["fft_color"] = graphColors[graphColorIndex];
+			beat = true;
+		}
+	} else {
+		beat = false;
+	}
 	
 	// Prepare FFT data.
 #if USE_FFT_SCALE
@@ -288,7 +325,6 @@ void sendFFTStatus() {
 #endif
 	
 	// Send message.
-	json obj;
 	obj["fft_data"] = arr;
 	broadcast(obj.dump());
 	
@@ -339,6 +375,7 @@ void skipSong() {
 	} else {
 		// Stop playing.
 		player.clear();
+		nowPlaying = Song();
 		broadcast("{\"now_playing_nothing\":true}");
 	}
 }

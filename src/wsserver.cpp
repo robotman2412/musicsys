@@ -305,15 +305,19 @@ static std::shared_ptr<std::string const> docRoot;
 void broadcast(std::string in) {
 	beast::flat_buffer buf;
 	for (auto session: sessions) {
-		const char *raw = in.c_str();
-		size_t len = strlen(raw);
-		buf.reserve(len);
-		auto w = buf.prepare(len);
-		char *dst = (char *) w.data();
-		memcpy(dst, raw, len);
-		buf.commit(len);
-		session->ws_.write(buf.data());
-		buf.consume(buf.max_size());
+		try {
+			const char *raw = in.c_str();
+			size_t len = strlen(raw);
+			buf.reserve(len);
+			auto w = buf.prepare(len);
+			char *dst = (char *) w.data();
+			memcpy(dst, raw, len);
+			buf.commit(len);
+			session->ws_.write(buf.data());
+			buf.consume(buf.max_size());
+		} catch (boost::system::system_error) {
+			// LoL
+		}
 	}
 }
 
