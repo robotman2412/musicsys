@@ -59,7 +59,11 @@ float fftRate = 60.0;
 
 int main(int argc, char **argv) {
 	// Start servers.
+	#ifdef DEBUG
 	startHttpServer(8080, "./web/", 1);
+	#else
+	startHttpServer(80, "./web/", 1);
+	#endif
 	startWebsocketServer(6969, 1);
 	
 	// Load data.
@@ -274,41 +278,74 @@ void sendSongStatus() {
 // Broadcast FFT data.
 void sendFFTStatus() {
 	// Used for BEAT DETECT.
-	static double prevAvg    = 0;
-	static double curAvg     = 0;
-	static double prevDelta  = 0;
-	static double curDelta   = 0;
-	static double beatThresh = 3;
-	static bool   beat       = false;
+	static double  intensity         = 0;
+	static double  smoothIntensity   = 0;
+	static long    guessBPM          = 200;
+	static int64_t lastIntensityPeak = micros();
+	static double  scale             = 0.02;
+	static bool    didChange         = false;
 	
 	// Create an array to pack data into.
 	json obj;
 	json arr = json::array();
 	
-	// Make an average of the FFT data.
-	prevAvg = curAvg;
-	curAvg  = 0;
-	for (size_t i = 0; i < 10; i++) {
-		curAvg += abs(fftCur.coeff[i]);
+	// Create a magic intensity value.
+	for (int i = 0; i < fftCur.coeff.size(); i++) {
+		double val = fftCur.coeff[i] * scale;
+		if (i <= 15) intensity += val * (20 - i) * 0.3;
+		else intensity += val / 9;
 	}
-	curAvg /= fftCur.coeff.size();
 	
-	// Make acceleration measurements.
-	prevDelta = curDelta;
-	curDelta  = curAvg / prevAvg;
-	
-	// Determine COEFF.
-	if (curDelta - prevDelta >= beatThresh) {
-		if (!beat) {
-			graphColorIndex = (graphColorIndex + 1) % numGraphColors;
-			obj["fft_color"] = graphColors[graphColorIndex];
-			beat = true;
-		}
+	// Smooth said intensity.
+	if (intensity < smoothIntensity) {
+		smoothIntensity += (intensity - smoothIntensity) * 0.5f;
 	} else {
-		beat = false;
+		smoothIntensity += (intensity - smoothIntensity) * 0.03f;
 	}
 	
-	// Prepare FFT data.
+	// Get time parameters for later.
+	int64_t now    = micros();
+	int64_t timing = lastIntensityPeak + 60000000ull / guessBPM;
+	int64_t delta  = now - lastIntensityPeak;
+	
+	// Beat detector.
+	if (now >= timing) {
+		// Predicted beat.
+		graphColorIndex   = (graphColorIndex + 1) % numGraphColors;
+		obj["fft_color"]  = graphColors[graphColorIndex];
+		lastIntensityPeak = now;
+		
+	}
+	if (intensity > smoothIntensity * 1.08 || now >= timing) {
+		if (!didChange) {
+			double bpm = 60000000 / delta;
+			// measuredBPM = bpm;
+			double diff = 5;
+			if (guessBPM == 0) {
+				guessBPM = bpm;
+			} else {
+				double _guessBPM = bpm;
+				if (_guessBPM > 50 && _guessBPM < 300) {
+					_guessBPM = (int) _guessBPM / 10 * 10;
+					// if (!lockBPM) {
+						guessBPM = (int) guessBPM / 10 * 10;
+						if (guessBPM < _guessBPM) guessBPM += 10;
+						if (guessBPM < _guessBPM) guessBPM += 10;
+						if (guessBPM > _guessBPM) guessBPM -= 10;
+						if (guessBPM > _guessBPM) guessBPM -= 10;
+					// }
+					std::cout << "BPM: " << guessBPM << std::endl;
+				}
+			}
+		}
+		didChange = true;
+	} else if (intensity < smoothIntensity) {
+		didChange = false;
+	}
+	
+	
+	
+	// Prepare FFT data for sending.
 #if USE_FFT_SCALE
 	// Determine scaling parameters.
 	double min = 0.6/30;

@@ -16,11 +16,10 @@ TARGET        = musicsys
 
 all: ./build/main.o
 	cp $< ./$(TARGET)
-	# sudo setcap CAP_NET_BIND_SERVICE=+eip $(TARGET)
+	sudo setcap CAP_NET_BIND_SERVICE=+eip $(TARGET)
 
 debug: ./build/debug.o
 	cp $< ./$(TARGET)
-	# sudo setcap CAP_NET_BIND_SERVICE=+eip $(TARGET)
 
 ./build/main.o: $(OBJECTS)
 	@echo LD $@
