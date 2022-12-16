@@ -117,8 +117,7 @@
 			<hr>
 			
 			<!-- Upload using link form !-->
-			<h2>UPLOAD SONG</h2>
-			<h3>SONG URL</h3>
+			<h2>UPLOAD VIA URL</h2>
 			<input onclick="setTimeout(clr_err, 100, 'song_url');" onkeyup="song_question()" onkeydown="song_question()"
 			       onchange="song_question()" id="song_url" type="text" class="wide">
 			<h3>SONG NAME</h3>
@@ -128,10 +127,10 @@
 			
 			<!-- Upload file form !-->
 			<h2>UPLOAD FILE</h2>
+			<input type="file" class="wide" id="file_uploader">
 			<h3>SONG NAME</h3>
 			<input id="song_name_file" type="text" class="wide">
-			<input type="file" class="wide" id="file_uploader">
-			<button type="submit" class="wide" onclick="upload_file()">UPLOAD MP3</button>
+			<button type="submit" class="wide" onclick="upload_file()">ADD SONG</button>
 		</div>
 	</body>
 </html>

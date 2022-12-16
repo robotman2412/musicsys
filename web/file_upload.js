@@ -8,15 +8,30 @@ var uploadStarting = {};
 function upload_file() {
 	// Get file input element.
 	var input = document.getElementById("file_uploader");
-	var name  = document.getElementById("song_name_file").value;
+	var name  = document.getElementById("song_name_file").value.trim();
 	
-	if (input.files.length) {
+	if (name == "") {
+		document.getElementById("song_name_file").setAttribute("class", "wide_err");
+	} else {
+		document.getElementById("song_name_file").setAttribute("class", "wide");
+	}
+	if (input.files.length != 1) {
+		input.setAttribute("class", "wide_err");
+	} else {
+		input.setAttribute("class", "wide");
+	}
+	
+	if (input.files.length && name != "") {
 		// Perform an asynchronous read.
 		reader = new FileReader()
 		reader.onload = function () {
 			uploadFileRead(name, new Uint8Array(this.result));
 		}
 		reader.readAsArrayBuffer(input.files[0]);
+		
+		// Clear inputs.
+		document.getElementById("song_name_file").value = "";
+		input.value = "";
 	}
 }
 
