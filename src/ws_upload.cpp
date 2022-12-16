@@ -3,6 +3,7 @@
 #include <lame/lame.h>
 
 static short the_big_dummy_array[100000];
+#define RECV_TIMEOUT 5000000
 
 // Abort the upload.
 void Upload::abort() {
@@ -51,12 +52,12 @@ Upload::Upload(uint id, Messager socket, json msg) {
 		return;
 	}
 	
+	// Read message data.
 	song.name    = msg["name"];
 	song.iconUrl = "default_icon.jpg";
-	
-	// Set size.
-	curSize  = 0;
-	expected = msg["size"];
+	curSize      = 0;
+	expected     = msg["size"];
+	msgTime      = micros();
 	
 	// Open file.
 	path = "./data/songs/" + std::to_string(id) + ".tmp";
@@ -94,6 +95,7 @@ bool Upload::handleMessage(Messager socket, json data) {
 	
 	if (!valid) return false;
 	if (isTranscoding) { abort(); return false; }
+	if (micros() > msgTime + RECV_TIMEOUT) { abort(); return false; }
 	
 	// Check message type.
 	if (!data["id"].is_number()) { abort(); return false; }
@@ -139,6 +141,7 @@ bool Upload::handleMessage(Messager socket, json data) {
 	// Broadcast the WIP song.
 	out["song_meta"] = song.toJson();
 	socket(out.dump());
+	msgTime = micros();
 	
 	return true;
 }
@@ -147,7 +150,10 @@ bool Upload::handleMessage(Messager socket, json data) {
 bool Upload::isAlive() {
 	std::lock_guard lock(mtx);
 	if (isTranscoding && !child.running()) {
-		if (child.exit_code()) abort();
+		if (child.exit_code()) {
+			abort();
+			return false;
+		}
 		
 		if (!lengthChecked) {
 			determineLength();
@@ -157,6 +163,7 @@ bool Upload::isAlive() {
 		song.valid  = valid;
 		return false;
 	}
+	if (!isTranscoding && micros() > msgTime + RECV_TIMEOUT) { abort(); return false; }
 	
 	return valid;
 }

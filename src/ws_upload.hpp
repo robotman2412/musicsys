@@ -15,6 +15,8 @@ namespace proc = boost::process;
 #include <wsserver.hpp>
 #include <data.hpp>
 
+extern int64_t micros();
+
 // A WebSocket based uploading class using ffmpeg for final conversion.
 // On error, automatically frees resources used.
 class Upload {
@@ -44,6 +46,8 @@ class Upload {
 		Song song;
 		// Mutexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 		std::mutex mtx;
+		// Time of last message.
+		volatile int64_t msgTime;
 		
 		// Abort the upload.
 		void abort();
