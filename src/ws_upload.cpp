@@ -1,6 +1,7 @@
 
 #include "ws_upload.hpp"
 #include <lame/lame.h>
+#include <main.hpp>
 
 static short the_big_dummy_array[100000];
 #define RECV_TIMEOUT 5000000
@@ -53,7 +54,7 @@ Upload::Upload(uint id, Messager socket, json msg) {
 	}
 	
 	// Read message data.
-	song.name    = msg["name"];
+	song.name    = escapeHTML(msg["name"]);
 	song.iconUrl = "default_icon.jpg";
 	curSize      = 0;
 	expected     = msg["size"];

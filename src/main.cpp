@@ -62,6 +62,8 @@ FFTData<FFT_TYPE> fftCur;
 FFTData<FFT_TYPE> fftLast;
 float fftRate = 60.0;
 
+bool shuffleMode = false;
+
 // Control-C handler device.
 static bool alive = true;
 extern "C" void onInterrupt(int signum) {
@@ -249,7 +251,7 @@ void handleMessage(Messager socket, std::string in) {
 		downloads.push_back(dl);
 		
 		// Make a callback.
-		std::string name = data["submit_song"]["name"];
+		std::string name = escapeHTML(data["submit_song"]["name"]);
 		dl->addCallback([name, id](Download &dl) {
 			// On error, delete song.
 			if (dl.isError()) {
@@ -294,6 +296,16 @@ void handleMessage(Messager socket, std::string in) {
 		if (iter == uploads.end()) return;
 		iter->second->handleMessage(socket, data["upload_file_data"]);
 		
+	} else if (data["shuffle_mode"].is_boolean()) {
+		// Enable/disable shuffle mode.
+		shuffleMode = data["shuffle_mode"];
+		
+		if (shuffleMode && !nowPlaying.valid) {
+			addRandomToQueue();
+		}
+		if (shuffleMode && !queue.size()) {
+			addRandomToQueue();
+		}
 	}
 }
 
@@ -328,6 +340,7 @@ void sendSongStatus() {
 	}
 	msg["playing"] = playing;
 	msg["set_volume"] = player.getVolume();
+	msg["shuffle_mode"] = shuffleMode;
 	broadcast(msg.dump());
 }
 
@@ -455,7 +468,7 @@ void playNow(uint id) {
 // Skips the current song.
 void skipSong() {
 	// Stop player.
-	player.pause();
+	player.clear();
 	
 	// Clear FFT queue.
 	analysed.clear();
@@ -465,9 +478,20 @@ void skipSong() {
 		Song next = queue[0];
 		removeFromQueue(next.index);
 		playNow(next.id);
+		
+		if (shuffleMode && !queue.size()) {
+			// Replace the song with a random new one.
+			addRandomToQueue();
+		}
+		
+	} else if (shuffleMode) {
+		// Play a random new song and also queue another.
+		nowPlaying.valid = false;
+		addRandomToQueue();
+		addRandomToQueue();
+		
 	} else {
 		// Stop playing.
-		player.clear();
 		nowPlaying = Song();
 		broadcast("{\"now_playing_nothing\":true}");
 	}
@@ -515,15 +539,68 @@ void addToQueue(uint id) {
 	broadcast(obj.dump());
 }
 
+// Add a random song to the queue.
+void addRandomToQueue() {
+	// Add a random song that isn't the next playing.
+	// Make a list of options.
+	std::vector<uint> ids;
+	ids.reserve(songs.size());
+	
+	// Add all songs not equal to this song.
+	for (auto pair: songs) {
+		if (pair.second.valid && pair.second.id != nowPlaying.id) {
+			ids.push_back(pair.second.id);
+		}
+	}
+	
+	// Pick an index in the options list.
+	uint id = ids[rand() % ids.size()];
+	if (nowPlaying.valid) {
+		addToQueue(id);
+	} else {
+		playNow(id);
+	}
+}
+
 // Remove song from queue by index.
 void removeFromQueue(size_t index) {
+	// Reverse iterate so that indices stay correct.
 	for (ssize_t i = queue.size()-1; i >= 0; i--) {
+		// If index matches remove index...
 		if (queue[i].index == index) {
+			// Erase from data structure.
 			queue.erase(queue.begin() + i);
+			// Broadcast removal.
 			json obj;
 			obj["remove_from_queue"] = index;
 			broadcast(obj.dump());
-			return;
+			break;
 		}
 	}
+	
+	// Check for shuffle mode.
+	if (!queue.size() && shuffleMode) {
+		addRandomToQueue();
+	}
+}
+
+// Escape HTML special characters.
+std::string escapeHTML(std::string in) {
+	// Make a new string which is filtered.
+	std::string out;
+	out.reserve(in.size());
+	
+	// Check every character.
+	for (size_t i = 0; i < in.size(); i++) {
+		switch (in[i]) {
+			default:   out += in[i];    break;
+			case '<':  out += "&lt;";   break;
+			case '>':  out += "&gt;";   break;
+			case '&':  out += "&amp;";  break;
+			case '\'': out += "&#39;";  break;
+			case '"':  out += "&quot;"; break;
+		}
+	}
+	
+	return out;
 }

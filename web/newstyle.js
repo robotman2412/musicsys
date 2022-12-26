@@ -180,6 +180,10 @@ function shuffle(array) {
   return array;
 }
 
+function update_shuffle_mode() {
+	ws.send(JSON.stringify({shuffle_mode: document.getElementById("shuffle_mode").checked}));
+}
+
 function restart_web_soc() {
 	//dirty approach
 	//document.location.reload();
@@ -197,7 +201,7 @@ function restart_web_soc() {
 	document.getElementById("now_playing_holder").innerHTML = "";
 	document.getElementById("song_queue_holder").innerHTML = "";
 	document.getElementById("song_holder").innerHTML = "";
-	set_title("LAN party music system");
+	set_title("Music System");
 	
 	// Reset state.
 	songs = {};
@@ -228,7 +232,7 @@ function start_web_soc() {
 	}
 	else
 	{
-		alert("Your browser does not support web sockets, or has them disabled.\nThe LAN party music system will not work.");
+		alert("Your browser does not support web sockets, or has them disabled.\nThe Music System will not work.");
 	}
 }
 
@@ -338,7 +342,7 @@ function handle_message(data) {
 		}
 	}
 	if (data.now_playing_nothing != undefined) {
-		set_title("LAN party music system");
+		set_title("Music System");
 		playing_present = false;
 		var timeKnob = document.getElementById("time_knob");
 		var timeTail = document.getElementById("time_tail");
@@ -369,6 +373,9 @@ function handle_message(data) {
 	}
 	if (data.upload_prog != undefined) {
 		handle_upload_message(data.upload_prog);
+	}
+	if (data.shuffle_mode != undefined) {
+		document.getElementById("shuffle_mode").checked = data.shuffle_mode;
 	}
 }
 

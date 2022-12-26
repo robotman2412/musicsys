@@ -16,6 +16,8 @@ void deleteSong(uint id);
 void addToQueue(uint id);
 // Skips the current song.
 void skipSong();
+// Add a random song to the queue.
+void addRandomToQueue();
 // Remove song from queue by index.
 void removeFromQueue(size_t index);
 // Broadcast song status.
@@ -24,5 +26,7 @@ void sendSongStatus();
 void sendFFTStatus();
 // Handle all upload thing handler devices.
 void handleDownloads();
+// Escape HTML special characters.
+std::string escapeHTML(std::string in);
 // Control-C handler device.
 extern "C" void onInterrupt(int signum);

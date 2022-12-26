@@ -11,6 +11,7 @@ void Download::managerMain() {
 	json obj = queryMetadata();
 	if (error) return;
 	
+	std::cout << "A\n";
 	try {
 		output.dlProg   = 0;
 		output.isConv   = false;
@@ -171,8 +172,8 @@ json Download::queryMetadata() {
 	json out;
 	try {
 		pipe >> out;
-		error = true;
 	} catch(json::parse_error err) {
+		error = true;
 		out = json();
 		std::cout << "Parse error: " << err.what() << std::endl;
 	}

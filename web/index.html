@@ -9,7 +9,7 @@
 		<link rel="icon" type="image/x-icon" href="/favicon.ico">
 		<script src="newstyle.js"></script>
 		<script src="file_upload.js"></script>
-		<title id="title_elem">LAN party music system</title>
+		<title id="title_elem">Music System</title>
 		
 		<!-- Template for song list !-->
 		<template id="song_template">
@@ -50,8 +50,8 @@
 		
 		<!-- Embed information !-->
 		<meta property="og:type" content="website">
-		<meta property="og:title" content="LAN Party music system">
-		<meta property="og:description" content="Gaming!">
+		<meta property="og:title" content="Music System">
+		<meta property="og:description" content="A web-based interface for playing music at parties">
 		<meta name="theme-color" content="#6942a2">
 	</head>
 	
@@ -60,7 +60,7 @@
 		<div id="templater" style="display: none;"></div>
 		
 		<div id="center" class="center">
-			<h1 id="title_h1">LAN party music system</h1>
+			<h1 id="title_h1">Music System</h1>
 			
 			<!-- Player !-->
 			<div class="fft-canvas-o">
@@ -109,6 +109,8 @@
 			<button onclick="event.button==0&&confirm('Do you want to clear the song queue?')&&clear_queue()" class="wide">CLEAR QUEUE</button>
 			<!-- <input id="add_songs_for_time" class="half-wide" placeholder="15:00"
 			><button class="half-wide" onclick="event.button==0&&add_songs_for_time()">MINUTES OF SONG</button> -->
+			<input type="checkbox" id="shuffle_mode" onchange="update_shuffle_mode()">
+			<label for="shuffle_mode">Add random song when queue empties</label>
 			<hr>
 			
 			<!-- Song list !-->
