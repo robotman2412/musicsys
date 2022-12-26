@@ -70,14 +70,23 @@ function resizing_loop() {
 	songsHolder.style.height = songs_ht * mul / div + "px";
 }
 
+// Simplifies rectangles such that they do not need subpixel rendering.
+function simplifyRect(ctx, x, y, w, h) {
+	w = Math.ceil(w + x);
+	h = Math.ceil(h + y);
+	x = Math.round(x);
+	y = Math.round(y);
+	ctx.fillRect(x, y, w-x, h-y);
+}
+
 function fft_loop() {
 	var canvas = document.getElementById("fft_canvas");
 	var width = Math.floor(canvas.getClientRects()[0].width);
 	if (canvas.width != width) {
 		canvas.width = width;
-		canvas.height = width / 16 * 9;
+		canvas.height = Math.round(width / 16 * 9);
 	}
-	var ctx = canvas.getContext("2d");
+	var ctx = canvas.getContext("2d", {alpha: false});
 	var numBars = magnitudes.length;
 	var barWidth = canvas.width / numBars;
 	
@@ -87,7 +96,7 @@ function fft_loop() {
 	var scale = 0.02;
 	
 	ctx.fillStyle = "rgba(" + R/8 + "," + G/8 + "," + B/8 + ",0.19)";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	simplifyRect(ctx, 0, 0, canvas.width, canvas.height);
 	var imgd = ctx.getImageData(canvas.width - 1, 0, 1, 1);
 	var pix = imgd.data;
 	document.body.style = "background-color:rgb(" + pix[0] + "," + pix[1] + "," + pix[2] + ")";
@@ -104,18 +113,19 @@ function fft_loop() {
 	if (graphStyle == 0) {
 		ctx.fillStyle = "rgba(" + R*0.75 + "," + G*0.75 + "," + B*0.75 + ",1)";
 		for (i = 0; i < numBars; i++) {
-			ctx.fillRect(i * barWidth + barWidth * 0.3, canvas.height, barWidth, -sum[i] * scale * canvas.height - barWidth * 0.3);
+			simplifyRect(ctx, i * barWidth + barWidth, canvas.height, barWidth * 0.3, -sum[i] * scale * canvas.height - barWidth * 0.3);
+			simplifyRect(ctx, i * barWidth + barWidth * 0.3, canvas.height - sum[i] * scale * canvas.height, barWidth, -barWidth * 0.3);
 		}
 		ctx.fillStyle = "rgba(" + R + "," + G + "," + B + ",1)";
 		for (i = 0; i < numBars; i++) {
-			ctx.fillRect(i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
+			simplifyRect(ctx, i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
 		}
 	} else if (graphStyle == 1) {
 		for (i = 0; i < numBars; i++) {
 			if (!isFinite(psum[i])) psum[i] = 0;
 			psum[i] = Math.max(sum[i], psum[i] - 0.125);
-			ctx.fillRect(i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
-			ctx.fillRect(i * barWidth, canvas.height - psum[i] * scale * canvas.height, barWidth, barWidth * 0.5);
+			simplifyRect(ctx, i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
+			simplifyRect(ctx, i * barWidth, canvas.height - psum[i] * scale * canvas.height, barWidth, barWidth * 0.5);
 		}
 		
 		ctx.fillStyle = "rgba(0,0,0,0.125)";
@@ -125,7 +135,7 @@ function fft_loop() {
 		for (y = -1; y < canvas.height; y += iY) {
 			//ctx.moveTo(0, y);
 			//ctx.lineTo(canvas.width, y);
-			ctx.fillRect(0, y, canvas.width, 1);
+			simplifyRect(ctx, 0, y, canvas.width, 1);
 		}
 	} else if (graphStyle == 2) {
 		ctx.strokeStyle = "rgba(" + R + "," + G + "," + B + ",1)";
@@ -159,7 +169,7 @@ function escapeHtml(unsafe) {
          .replace(/>/g, "&gt;")
          .replace(/"/g, "&quot;")
          .replace(/'/g, "&#039;");
- }
+}
 
 function shuffle(array) {
   var currentIndex = array.length, temporaryValue, randomIndex;
@@ -366,7 +376,7 @@ function handle_message(data) {
 		}
 	}
 	if (data.fft_color != undefined) {
-		fft_color = data.fft_color;
+		// fft_color = data.fft_color;
 	}
 	if (data.graph_style != undefined) {
 		graphStyle = data.graph_style;
