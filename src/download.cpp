@@ -35,7 +35,7 @@ void Download::managerMain() {
 	// Call youtube-dl for downloading.
 	boost::process::ipstream pipe;
 	auto binary = proc::search_path("yt-dlp");
-	proc::child child(binary, "-x", "--audio-format", "mp3", "--newline", "-o", outPath, url, proc::std_out > pipe);
+	proc::child child(binary, "-x", "--no-playlist", "--audio-format", "mp3", "--newline", "-o", outPath, url, proc::std_out > pipe);
 	
 	// Initial validity check.
 	if (!child.valid()) {
@@ -127,7 +127,7 @@ json Download::queryMetadata() {
 	std::string tmpPath = "data/song_meta/" + std::to_string(id) + ".json.tmp";
 	
 	auto binary = proc::search_path("yt-dlp");
-	proc::child child(binary, "-j", url, proc::std_out > tmpPath);
+	proc::child child(binary, "--no-playlist", "-j", url, proc::std_out > tmpPath);
 	
 	// Initial validity check.
 	if (!child.valid()) {
@@ -157,11 +157,8 @@ json Download::queryMetadata() {
 	if (child.exit_code() != 0) {
 		error = true;
 		std::cout << "Nonzero exit code." << std::endl;
-		while (!pipe.eof()) {
-			std::cout.put(pipe.get());
-		}
 		std::cout << std::endl;
-		std::remove(tmpPath.c_str());
+		// std::remove(tmpPath.c_str());
 		return json();
 	}
 	
