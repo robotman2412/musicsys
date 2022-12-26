@@ -118,8 +118,9 @@ function fft_loop() {
 		ctx.fillStyle = "rgba(" + R*0.75 + "," + G*0.75 + "," + B*0.75 + ",1)";
 		ctx.beginPath();
 		for (i = 0; i < numBars; i++) {
-			simplifyRect(ctx, i * barWidth + barWidth, canvas.height, barWidth * 0.3, -sum[i] * scale * canvas.height - barWidth * 0.3);
-			simplifyRect(ctx, i * barWidth + barWidth * 0.3, canvas.height - sum[i] * scale * canvas.height, barWidth, -barWidth * 0.3);
+			simplifyRect(ctx, i * barWidth + barWidth * 0.3, canvas.height, barWidth, -sum[i] * scale * canvas.height - barWidth * 0.3);
+			// simplifyRect(ctx, i * barWidth + barWidth, canvas.height, barWidth * 0.3, -sum[i] * scale * canvas.height - barWidth * 0.3);
+			// simplifyRect(ctx, i * barWidth + barWidth * 0.3, canvas.height - sum[i] * scale * canvas.height, barWidth, -barWidth * 0.3);
 		}
 		ctx.fill();
 		ctx.fillStyle = "rgba(" + R + "," + G + "," + B + ",1)";

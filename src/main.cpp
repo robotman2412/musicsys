@@ -482,15 +482,15 @@ void skipSong() {
 	analysed.clear();
 	
 	if (queue.size()) {
+		if (shuffleMode && queue.size() <= 1) {
+			// Top up the queue with another random song.
+			addRandomToQueue();
+		}
+		
 		// Load more from queue
 		Song next = queue[0];
 		removeFromQueue(next.index);
 		playNow(next.id);
-		
-		if (shuffleMode && !queue.size()) {
-			// Replace the song with a random new one.
-			addRandomToQueue();
-		}
 		
 	} else if (shuffleMode) {
 		// Play a random new song and also queue another.
@@ -575,6 +575,8 @@ void addRandomToQueue() {
 
 // Remove song from queue by index.
 void removeFromQueue(size_t index) {
+	json obj;
+	
 	// Reverse iterate so that indices stay correct.
 	for (ssize_t i = queue.size()-1; i >= 0; i--) {
 		// If index matches remove index...
@@ -582,17 +584,16 @@ void removeFromQueue(size_t index) {
 			// Erase from data structure.
 			queue.erase(queue.begin() + i);
 			// Broadcast removal.
-			json obj;
 			obj["remove_from_queue"] = index;
-			broadcast(obj.dump());
 			break;
 		}
 	}
-	
 	// Check for shuffle mode.
 	if (!queue.size() && shuffleMode) {
 		addRandomToQueue();
 	}
+	
+	broadcast(obj.dump());
 }
 
 // Escape HTML special characters.
