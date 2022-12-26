@@ -22,6 +22,9 @@
 #include <async_queue.hpp>
 #include <ws_upload.hpp>
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+
 #include <pulse/simple.h>
 #include <pulse/error.h>
 
@@ -59,7 +62,17 @@ FFTData<FFT_TYPE> fftCur;
 FFTData<FFT_TYPE> fftLast;
 float fftRate = 60.0;
 
+// Control-C handler device.
+static bool alive = true;
+extern "C" void onInterrupt(int signum) {
+	std::cout << "Interrupted." << std::endl;
+	alive = false;
+}
+
 int main(int argc, char **argv) {
+	// Add abort handler.
+	signal(SIGINT, onInterrupt);
+	
 	// Start servers.
 	#ifdef DEBUG
 	startHttpServer(8080, "./web/", 1);
@@ -103,7 +116,7 @@ int main(int argc, char **argv) {
 	
 	// Send metadata from time to time.
 	uint64_t nextTime = micros();
-	while (1) {
+	while (alive) {
 		if (player.getStatus() == MpegPlayer::FINISHED) {
 			player.acknowledge();
 			skipSong();
@@ -143,6 +156,8 @@ int main(int argc, char **argv) {
 	// Close servers.
 	stopHttpServer();
 	stopWebsocketServer();
+	
+	std::cout << "Exited normally." << std::endl;
 	return 0;
 }
 

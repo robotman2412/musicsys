@@ -24,3 +24,5 @@ void sendSongStatus();
 void sendFFTStatus();
 // Handle all upload thing handler devices.
 void handleDownloads();
+// Control-C handler device.
+extern "C" void onInterrupt(int signum);
