@@ -134,6 +134,10 @@ function fft_loop() {
 			if (!isFinite(psum[i])) psum[i] = 0;
 			psum[i] = Math.max(sum[i], psum[i] - 0.125);
 			simplifyRect(ctx, i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
+		}
+		ctx.fill();
+		ctx.beginPath();
+		for (i = 0; i < numBars; i++) {
 			simplifyRect(ctx, i * barWidth, canvas.height - psum[i] * scale * canvas.height, barWidth, barWidth * 0.5);
 		}
 		ctx.fill();

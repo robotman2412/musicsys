@@ -174,6 +174,14 @@ int64_t micros() {
 void handleAccepted(Messager socket) {
 	std::cout << "Accepted" << std::endl;
 	
+	// Send GRAPH STYLE to new socket.
+	{
+		json obj;
+		obj["graph_style"] = graphStyle;
+		obj["fft_color"] = graphColors[graphColorIndex];
+		socket(obj.dump());
+	}
+	
 	// Send SONG META to new socket.
 	for (auto &pair: songs) {
 		Song &song = pair.second;
