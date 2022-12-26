@@ -11,14 +11,20 @@ void Download::managerMain() {
 	json obj = queryMetadata();
 	if (error) return;
 	
-	output.dlProg   = 0;
-	output.isConv   = false;
-	output.id       = id;
-	output.duration = obj["duration"];
-	output.iconUrl  = obj["thumbnail"];
-	output.name     = obj["fulltitle"];
-	output.valid    = true;
-	output.durationStr = Song::stringDuration(output.duration);
+	try {
+		output.dlProg   = 0;
+		output.isConv   = false;
+		output.id       = id;
+		output.duration = obj["duration"];
+		output.iconUrl  = obj["thumbnail"];
+		output.name     = obj["fulltitle"];
+		output.valid    = true;
+		output.durationStr = Song::stringDuration(output.duration);
+	} catch(json::type_error err) {
+		std::cout << "JSON type error: " << err.what() << std::endl;
+		error = true;
+		return;
+	}
 	
 	// Determine output path.
 	std::string outPath = "data/songs/" + std::to_string(id) + ".%(ext)s";
@@ -119,15 +125,17 @@ json Download::queryMetadata() {
 	std::cout << "Querying " << url << std::endl;
 	
 	// Call youtube-dl for downloading.
-	boost::process::ipstream pipe;
-	std::string binary = "/usr/local/bin/yt-dlp";
+	std::string tmpPath = "data/song_meta/" + std::to_string(id) + ".json.tmp";
+	
+	std::string binary  = "/usr/local/bin/yt-dlp";
 	// proc::search_path("youtube-dl")
-	proc::child child(binary, "-j", url, proc::std_out > pipe);
+	proc::child child(binary, "-j", url, proc::std_out > tmpPath);
 	
 	// Initial validity check.
 	if (!child.valid()) {
 		error = true;
 		std::cout << "PROC CREAT EROR." << std::endl;
+		std::remove(tmpPath.c_str());
 		return json();
 	}
 	
@@ -135,27 +143,40 @@ json Download::queryMetadata() {
 	for (size_t i = 0; i < 1000; i++) {
 		if (cancelled && child.running()) {
 			child.terminate();
-		error = true;
+			error = true;
+			std::remove(tmpPath.c_str());
 			return json();
 		}
 		usleep(10000);
 	}
 	if (child.running()) {
 		child.terminate();
-		// error = true;
-		// return json();
 	}
 	
 	// Check exit status.
+	child.wait();
+	std::ifstream pipe(tmpPath);
 	if (child.exit_code() != 0) {
 		error = true;
 		std::cout << "Nonzero exit code." << std::endl;
+		while (!pipe.eof()) {
+			std::cout.put(pipe.get());
+		}
+		std::cout << std::endl;
+		std::remove(tmpPath.c_str());
 		return json();
 	}
 	
 	std::cout << "Received metadata, decoding." << std::endl;
 	json out;
-	pipe >> out;
+	try {
+		pipe >> out;
+		error = true;
+	} catch(json::parse_error err) {
+		out = json();
+		std::cout << "Parse error: " << err.what() << std::endl;
+	}
+	std::remove(tmpPath.c_str());
 	return out;
 }
 

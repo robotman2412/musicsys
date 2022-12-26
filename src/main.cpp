@@ -175,7 +175,13 @@ void handleAccepted(Messager socket) {
 
 // Handle a new incoming message.
 void handleMessage(Messager socket, std::string in) {
-	json data = json::parse(in);
+	json data;
+	try {
+		data = json::parse(in);
+	} catch(json::parse_error err) {
+		data = json();
+		std::cout << "Parse error: " << err.what() << std::endl;
+	}
 	if (!data.contains("upload_file_data")) std::cout << in << std::endl;
 	
 	if (data["set_playing"].is_boolean()) {
