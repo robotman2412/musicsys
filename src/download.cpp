@@ -1,5 +1,6 @@
 
 #include "download.hpp"
+#include <boost/filesystem.hpp>
 #include <boost/process.hpp>
 #include <iostream>
 
@@ -33,9 +34,7 @@ void Download::managerMain() {
 	
 	// Call youtube-dl for downloading.
 	boost::process::ipstream pipe;
-	std::string binary = "/usr/local/bin/yt-dlp";
-	// proc::search_path("youtube-dl")
-	// proc::child child(binary, "-x", "--audio-format", "mp3", "--newline", "-o", outPath, url);
+	auto binary = proc::search_path("yt-dlp");
 	proc::child child(binary, "-x", "--audio-format", "mp3", "--newline", "-o", outPath, url, proc::std_out > pipe);
 	
 	// Initial validity check.
@@ -127,8 +126,7 @@ json Download::queryMetadata() {
 	// Call youtube-dl for downloading.
 	std::string tmpPath = "data/song_meta/" + std::to_string(id) + ".json.tmp";
 	
-	std::string binary  = "/usr/local/bin/yt-dlp";
-	// proc::search_path("youtube-dl")
+	auto binary = proc::search_path("yt-dlp");
 	proc::child child(binary, "-j", url, proc::std_out > tmpPath);
 	
 	// Initial validity check.
@@ -140,7 +138,7 @@ json Download::queryMetadata() {
 	}
 	
 	// Time limit on the query.
-	for (size_t i = 0; i < 1000; i++) {
+	for (size_t i = 0; i < 1000 && child.running(); i++) {
 		if (cancelled && child.running()) {
 			child.terminate();
 			error = true;
