@@ -11,7 +11,6 @@ void Download::managerMain() {
 	json obj = queryMetadata();
 	if (error) return;
 	
-	std::cout << "A\n";
 	try {
 		output.dlProg   = 0;
 		output.isConv   = false;
