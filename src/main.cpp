@@ -522,7 +522,9 @@ void deleteSong(uint id) {
 	}
 	
 	// If playing, skip.
-	skipSong();
+	if (id == nowPlaying.id) {
+		skipSong();
+	}
 	
 	// Broadcast the deletion.
 	json obj;
