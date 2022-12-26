@@ -76,7 +76,11 @@ function simplifyRect(ctx, x, y, w, h) {
 	h = Math.ceil(h + y);
 	x = Math.round(x);
 	y = Math.round(y);
-	ctx.fillRect(x, y, w-x, h-y);
+	// ctx.fillRect(x, y, w-x, h-y);
+	// ctx.beginPath();
+	ctx.rect(x, y, w-x, h-y);
+	// ctx.fill();
+	// ctx.closePath();
 }
 
 function fft_loop() {
@@ -86,7 +90,7 @@ function fft_loop() {
 		canvas.width = width;
 		canvas.height = Math.round(width / 16 * 9);
 	}
-	var ctx = canvas.getContext("2d", {alpha: false});
+	var ctx = canvas.getContext("2d", {alpha: false, antialias: false});
 	var numBars = magnitudes.length;
 	var barWidth = canvas.width / numBars;
 	
@@ -96,7 +100,7 @@ function fft_loop() {
 	var scale = 0.02;
 	
 	ctx.fillStyle = "rgba(" + R/8 + "," + G/8 + "," + B/8 + ",0.19)";
-	simplifyRect(ctx, 0, 0, canvas.width, canvas.height);
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	var imgd = ctx.getImageData(canvas.width - 1, 0, 1, 1);
 	var pix = imgd.data;
 	document.body.style = "background-color:rgb(" + pix[0] + "," + pix[1] + "," + pix[2] + ")";
@@ -112,31 +116,39 @@ function fft_loop() {
 	
 	if (graphStyle == 0) {
 		ctx.fillStyle = "rgba(" + R*0.75 + "," + G*0.75 + "," + B*0.75 + ",1)";
+		ctx.beginPath();
 		for (i = 0; i < numBars; i++) {
 			simplifyRect(ctx, i * barWidth + barWidth, canvas.height, barWidth * 0.3, -sum[i] * scale * canvas.height - barWidth * 0.3);
 			simplifyRect(ctx, i * barWidth + barWidth * 0.3, canvas.height - sum[i] * scale * canvas.height, barWidth, -barWidth * 0.3);
 		}
+		ctx.fill();
 		ctx.fillStyle = "rgba(" + R + "," + G + "," + B + ",1)";
+		ctx.beginPath();
 		for (i = 0; i < numBars; i++) {
 			simplifyRect(ctx, i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
 		}
+		ctx.fill();
 	} else if (graphStyle == 1) {
+		ctx.beginPath();
 		for (i = 0; i < numBars; i++) {
 			if (!isFinite(psum[i])) psum[i] = 0;
 			psum[i] = Math.max(sum[i], psum[i] - 0.125);
 			simplifyRect(ctx, i * barWidth, canvas.height, barWidth, -sum[i] * scale * canvas.height);
 			simplifyRect(ctx, i * barWidth, canvas.height - psum[i] * scale * canvas.height, barWidth, barWidth * 0.5);
 		}
+		ctx.fill();
 		
 		ctx.fillStyle = "rgba(0,0,0,0.125)";
 		//ctx.fillStyle = "rgb(0,0,0)";
 		//ctx.lineWidth = 0.5;
 		var iY = Math.ceil(barWidth * 0.5);
+		ctx.beginPath();
 		for (y = -1; y < canvas.height; y += iY) {
 			//ctx.moveTo(0, y);
 			//ctx.lineTo(canvas.width, y);
 			simplifyRect(ctx, 0, y, canvas.width, 1);
 		}
+		ctx.fill();
 	} else if (graphStyle == 2) {
 		ctx.strokeStyle = "rgba(" + R + "," + G + "," + B + ",1)";
 		ctx.lineWidth = barWidth * 0.5;
@@ -376,7 +388,7 @@ function handle_message(data) {
 		}
 	}
 	if (data.fft_color != undefined) {
-		// fft_color = data.fft_color;
+		fft_color = data.fft_color;
 	}
 	if (data.graph_style != undefined) {
 		graphStyle = data.graph_style;

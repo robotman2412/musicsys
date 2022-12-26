@@ -471,6 +471,20 @@ div.center-disp {
 	/*background-color: #f7f7f7;*/
 }
 
+input[type="checkbox"] {
+	width: 15px;
+	height: 15px;
+}
+
+.mobile input[type="checkbox"] {
+	width: 40px;
+	height: 40px;
+}
+
+label {
+	font-size: 125%;
+}
+
 input.half-wide {
 	width: calc(50% - 0.5em);
 	padding: 5px;

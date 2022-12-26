@@ -553,6 +553,9 @@ void addRandomToQueue() {
 		}
 	}
 	
+	// Nothing else to do if there's no songs.
+	if (ids.size() == 0) return;
+	
 	// Pick an index in the options list.
 	uint id = ids[rand() % ids.size()];
 	if (nowPlaying.valid) {
