@@ -30,6 +30,8 @@
 
 #include <lame/lame.h>
 
+namespace fs = std::filesystem;
+
 #define FFT_WIDTH 100
 #define FFT_TYPE int32_t
 #define USE_FFT_SCALE 1
@@ -74,6 +76,10 @@ extern "C" void onInterrupt(int signum) {
 int main(int argc, char **argv) {
 	// Add abort handler.
 	signal(SIGINT, onInterrupt);
+	
+	// Create data directories that are expected.
+	fs::create_directories("data/songs");
+	fs::create_directories("data/song_meta");
 	
 	// Start servers.
 	#ifdef DEBUG

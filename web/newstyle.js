@@ -630,20 +630,15 @@ function song_question() {
 function submit_song() {
 	song_name = document.getElementById("song_name");
 	song_url = document.getElementById("song_url");
-	if (song_name.value === "") {
-		song_name.setAttribute("class", "wide_err");
-	}
 	if (song_url.value === "") {
 		song_url.setAttribute("class", "wide_err");
-	}
-	if (song_name.value === "" || song_url.value === "") {
 		return;
 	}
 	song_url.setAttribute("class", "wide");
 	song_name.setAttribute("class", "wide");
 	submit = {};
-	submit.name = song_name.value;
-	submit.url = song_url.value;
+	submit.name = song_name.value.trim();
+	submit.url = song_url.value.trim();
 	data = {};
 	data.submit_song = submit;
 	ws.send(JSON.stringify(data));

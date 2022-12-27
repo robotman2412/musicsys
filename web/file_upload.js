@@ -10,15 +10,13 @@ function upload_file() {
 	var input = document.getElementById("file_uploader");
 	var name  = document.getElementById("song_name_file").value.trim();
 	
-	if (name == "") {
-		document.getElementById("song_name_file").setAttribute("class", "wide_err");
-	} else {
-		document.getElementById("song_name_file").setAttribute("class", "wide");
-	}
 	if (input.files.length != 1) {
 		input.setAttribute("class", "wide_err");
 	} else {
 		input.setAttribute("class", "wide");
+	}
+	if (name == "") {
+		name = input.files[0].name;
 	}
 	
 	if (input.files.length && name != "") {

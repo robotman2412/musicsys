@@ -1,6 +1,8 @@
 # Music system
 
 ## Prerequisites
-`sudo apt install lame libmp3lame-dev libpulse-dev`
+`sudo apt install lame libmp3lame-dev libpulse-dev libboost-all-dev yt-dlp`
 - LAME MP3 decoder: https://lame.sourceforge.io/
 - PulseAudio: https://www.freedesktop.org/wiki/Software/PulseAudio/
+- Boost: https://www.boost.org/
+- YT-DLP: https://github.com/yt-dlp/yt-dlp
