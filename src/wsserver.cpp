@@ -313,7 +313,10 @@ void broadcast(std::string in) {
 			char *dst = (char *) w.data();
 			memcpy(dst, raw, len);
 			buf.commit(len);
-			session->ws_.write(buf.data());
+			// session->ws_.write(buf.data());
+			session->ws_.async_write(buf.data(), [](auto a, auto b) {
+				// LOL
+			});
 			buf.consume(buf.max_size());
 		} catch (boost::system::system_error) {
 			// LoL
