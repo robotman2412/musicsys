@@ -2,8 +2,8 @@
 
 MAKEFLAGS    += --jobs=$(shell nproc)
 CC            = gcc
-LDFLAGS       = -lpthread -lm -lstdc++ $(shell pkg-config --libs libpulse libpulse-simple) -lmp3lame -lboost_system -lboost_filesystem
-CFLAGS_ALL    = -Isrc -Ijson/include -Wno-unused-result -Wno-format-truncation -Wno-narrowing -std=c++17 $(shell pkg-config --cflags libpulse libpulse-simple)
+LDFLAGS       = -lpthread -lm -lstdc++ $(shell pkg-config --libs libpulse libpulse-simple) -lmp3lame -lboost_system -lboost_filesystem -lcrypto
+CFLAGS_ALL    = -Isrc -Isimple-websocket -Ijson/include -Wno-unused-result -Wno-format-truncation -Wno-narrowing -std=c++17 $(shell pkg-config --cflags libpulse libpulse-simple)
 CFLAGS        = $(CFLAGS_ALL)
 CFLAGS_DEBUG  = $(CFLAGS_ALL) -O0 -ggdb -DDEBUG
 HEADERS       = $(shell find ./src -type f -name "*.h" -o -name "*.hpp")
