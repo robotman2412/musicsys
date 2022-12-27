@@ -12,7 +12,7 @@ SineProvider::SineProvider() {
 }
 
 // Update increment as angle.
-SineProvider::SineProvider(double angle) {
+SineProvider::SineProvider(FpType angle) {
 	curCos   = 1;
 	curSin   = 0;
 	curAngle = 0;
@@ -20,7 +20,7 @@ SineProvider::SineProvider(double angle) {
 }
 
 // Update increment as frequency.
-SineProvider::SineProvider(double sineHertz, double sampleHertz) {
+SineProvider::SineProvider(FpType sineHertz, FpType sampleHertz) {
 	curCos   = 1;
 	curSin   = 0;
 	curAngle = 0;
@@ -29,14 +29,14 @@ SineProvider::SineProvider(double sineHertz, double sampleHertz) {
 
 
 // Update increment as angle.
-void SineProvider::setIncAngle(double angle) {
+void SineProvider::setIncAngle(FpType angle) {
 	incCos = cos(angle);
 	incSin = sin(angle);
 	curInc = angle;
 }
 
 // Update increment as frequency.
-void SineProvider::setIncFreq(double sineHertz, double sampleHertz) {
+void SineProvider::setIncFreq(FpType sineHertz, FpType sampleHertz) {
 	setIncAngle(M_PI * 2 * sineHertz / sampleHertz);
 }
 
@@ -63,7 +63,7 @@ void SineProvider::increment() {
 		return;
 	}
 	
-	double cos0 = curCos, sin0 = curSin;
+	FpType cos0 = curCos, sin0 = curSin;
 	curAngle += curInc;
 	
 	// Fancy multiplication.

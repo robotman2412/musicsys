@@ -2,8 +2,7 @@
 #pragma once
 
 #include <map>
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#include <main.hpp>
 
 class Song {
 	public:
@@ -19,13 +18,13 @@ class Song {
 		// Song name.
 		std::string name;
 		// Download progress as fraction.
-		double dlProg;
+		FpType dlProg;
 		// Whether the song is being converted.
 		bool isConv;
 		// Duration in seconds.
-		double duration;
+		FpType duration;
 		// Current playback time in seconds.
-		double currentTime;
+		FpType currentTime;
 		// Duration string in hh:mm:ss.
 		std::string durationStr;
 		
@@ -41,7 +40,7 @@ class Song {
 		json toJson();
 		
 		// Gets teh STRING DURATION for theee seconds count.
-		static std::string stringDuration(float seconds);
+		static std::string stringDuration(FpType seconds);
 		// Load from song_meta folder.
 		static Song load(uint id);
 		// Load all songs from song_meta folder.

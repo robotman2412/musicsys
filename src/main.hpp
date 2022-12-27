@@ -5,6 +5,7 @@
 using json = nlohmann::json;
 #include <iostream>
 #include <string>
+using FpType = float;
 
 // Get time in microseconds.
 int64_t micros();

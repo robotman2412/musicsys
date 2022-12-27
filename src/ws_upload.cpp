@@ -27,7 +27,7 @@ void Upload::determineLength() {
 		count = hip_decode1_headers(decoder, (uint8_t*) tmp, read, the_big_dummy_array, the_big_dummy_array, &mp3);
 	} while (count == 0);
 	hip_decode_exit(decoder);
-	song.duration = (double) mp3.nsamp / (double) mp3.samplerate;
+	song.duration = (FpType) mp3.nsamp / (FpType) mp3.samplerate;
 	song.durationStr = Song::stringDuration(song.duration);
 }
 
@@ -112,7 +112,7 @@ bool Upload::handleMessage(Messager socket, json data) {
 		// Increment received size.
 		curSize ++;
 	}
-	song.dlProg = (double) curSize / (double) expected;
+	song.dlProg = (FpType) curSize / (FpType) expected;
 	
 	// Prepare response.
 	json out;

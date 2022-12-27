@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <main.hpp>
 
 #include <string>
 #include <thread>
@@ -16,7 +17,7 @@
 extern int64_t micros();
 
 // A callback for consuming audio samples.
-typedef std::function<void(double songTime, size_t sampleCount, int16_t *samplesLeft, int16_t *samplesRight, double sampleRate)> SampleConsumer;
+typedef std::function<void(FpType songTime, size_t sampleCount, int16_t *samplesLeft, int16_t *samplesRight, FpType sampleRate)> SampleConsumer;
 
 // A C++ wrapper for pulseaudio + LAME based MP3 playback.
 // Creates it's own threads for doing so.
@@ -44,19 +45,19 @@ class MpegPlayer {
 		// True when there are no errors and it is not the end of the file.
 		volatile bool  isPlayable;
 		// Duration, or NaN if unknown.
-		volatile double playDuration;
+		volatile FpType playDuration;
 		// Current playback time.
-		volatile double currentTime;
+		volatile FpType currentTime;
 		// Previous value of currentTime, used for tell().
-		volatile double lastTime;
+		volatile FpType lastTime;
 		// Time used to seek.
-		volatile double seekTime;
+		volatile FpType seekTime;
 		// Last time at which a set of samples was sent.
 		volatile int64_t sampleTime;
 		// Current playback volume.
-		volatile double volume;
+		volatile FpType volume;
 		// Current playback sample rate.
-		volatile double sampleRate;
+		volatile FpType sampleRate;
 		
 		// (Owner: player thread) Amount of samples in the buffers.
 		ssize_t     sampleCount;
@@ -109,15 +110,15 @@ class MpegPlayer {
 		
 		// Determine duration in seconds.
 		// Returns NaN if unknown.
-		double duration();
+		FpType duration();
 		// Seek to point in seconds.
 		// Returns point seeked to.
-		double seek(double to);
+		FpType seek(FpType to);
 		// Tells current time.
-		double tell();
+		FpType tell();
 		
 		// Set the new desired volume.
-		void setVolume(double volume);
+		void setVolume(FpType volume);
 		// Get the current volume.
-		double getVolume();
+		FpType getVolume();
 };

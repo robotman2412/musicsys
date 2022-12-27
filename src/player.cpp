@@ -19,7 +19,7 @@ void MpegPlayer::playerMain() {
 			// Lock before attempting to play.
 			playMtx.lock();
 			
-			double nextTime = currentTime;
+			FpType nextTime = currentTime;
 			do {
 				// Load bytes from input file.
 				size_t num = fread(raw, 1, sizeof(raw), currentFd);
@@ -37,7 +37,7 @@ void MpegPlayer::playerMain() {
 					isPlayable = false;
 					break;
 				} else if (sampleCount > 0) {
-					nextTime += sampleCount / (double) mp3_type.samplerate;
+					nextTime += sampleCount / (FpType) mp3_type.samplerate;
 				}
 			} while (sampleCount == 0 || nextTime < seekTime);
 			
@@ -59,7 +59,7 @@ void MpegPlayer::playerMain() {
 				lastTime     = currentTime;
 				sampleTime   = micros();
 				currentTime  = nextTime;
-				playDuration = mp3_type.nsamp / (double) mp3_type.samplerate;
+				playDuration = mp3_type.nsamp / (FpType) mp3_type.samplerate;
 				playMtx.unlock();
 				
 				// Send out the samples.
@@ -74,7 +74,7 @@ void MpegPlayer::playerMain() {
 
 // (Owner: player thread) Merge left and right into combined.
 void MpegPlayer::combineBuffers() {
-	double vol = volume * volume;
+	FpType vol = volume * volume;
 	for (size_t i = 0; i < sampleCount; i++) {
 		combinedBuf[i*2+0] = leftBuf [i] * vol;
 		combinedBuf[i*2+1] = rightBuf[i] * vol;
@@ -236,13 +236,13 @@ void MpegPlayer::acknowledge() {
 
 // Determine duration in seconds.
 // Returns NaN if unknown.
-double MpegPlayer::duration() {
+FpType MpegPlayer::duration() {
 	return playDuration;
 }
 
 // Seek to point in seconds.
 // Returns point seeked to.
-double MpegPlayer::seek(double to) {
+FpType MpegPlayer::seek(FpType to) {
 	std::lock_guard lock(playMtx);
 	if (!isSetup) return 0;
 	
@@ -269,7 +269,7 @@ double MpegPlayer::seek(double to) {
 
 // Seek to point in seconds.
 // Returns point seeked to.
-double MpegPlayer::tell() {
+FpType MpegPlayer::tell() {
 	std::lock_guard lock(playMtx);
 	
 	if (currentTime < seekTime) {
@@ -282,7 +282,7 @@ double MpegPlayer::tell() {
 }
 
 // Set the new desired volume.
-void MpegPlayer::setVolume(double volume) {
+void MpegPlayer::setVolume(FpType volume) {
 	playMtx.lock();
 	if (volume > VOLUME_MAXIMUM) volume = VOLUME_MAXIMUM;
 	if (volume < VOLUME_MINIMUM) volume = VOLUME_MINIMUM;
@@ -291,6 +291,6 @@ void MpegPlayer::setVolume(double volume) {
 }
 
 // Get the current volume.
-double MpegPlayer::getVolume() {
+FpType MpegPlayer::getVolume() {
 	return volume;
 }

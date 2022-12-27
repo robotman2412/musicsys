@@ -65,7 +65,7 @@ json Song::toJson() {
 
 
 // Gets teh STRING DURATION for theee seconds count.
-std::string Song::stringDuration(float seconds0) {
+std::string Song::stringDuration(FpType seconds0) {
 	int sec = seconds0+0.5;
 	int min = sec / 60;
 	sec %= 60;
