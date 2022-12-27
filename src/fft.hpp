@@ -165,7 +165,7 @@ template <typename Num> class FFTSpectrum {
 		// Make a new FFT spectrum.
 		// Output rate in analisys points per second.
 		// Time span for analisys in seconds.
-		FFTSpectrum(FpType freqLow=20, FpType freqHigh=5000, size_t channelCount=100);
+		FFTSpectrum(FpType freqLow=20, FpType freqHigh=5000, size_t channelCount=20);
 		
 		// Update sample rate.
 		void setSampleRate(FpType newRate);

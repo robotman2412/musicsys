@@ -1,6 +1,7 @@
 
 #include "fft.hpp"
 #include <iostream>
+
 // Rolling sum initialised with default values.
 template <typename Num>
 RollingSum<Num>::RollingSum(size_t length) {
