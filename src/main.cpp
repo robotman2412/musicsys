@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
 	// Create data directories that are expected.
 	fs::create_directories("data/songs");
 	fs::create_directories("data/song_meta");
+	fs::create_directories("data/import");
 	importPaths.push_back("data/import");
 	
 	// Start servers.
