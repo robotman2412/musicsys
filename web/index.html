@@ -66,7 +66,7 @@
 			<div class="fft-canvas-o">
 				<canvas class="fft-canvas" id="fft_canvas"></canvas>
 				<div class="controls" id="controls">
-					<div class="time-o" onmousedown="event.button==0&&update_time()">
+					<div class="time-o" onmousedown="event.button==0&&update_time()" onmousemove="(event.buttons&1)&&update_time()">
 						<div class="time-i">
 							<div class="time-calc" id="time_calc"></div>
 						</div>
@@ -75,7 +75,7 @@
 							<div class="time-knob" id="time_knob"></div>
 						</div>
 					</div>
-					<div class="volume-o" onmousedown="event.button==0&&update_volume()">
+					<div class="volume-o" onmousedown="event.button==0&&update_volume()" onmousemove="(event.buttons&1)&&update_volume()">
 						<i class="fa fa-volume-up"></i>
 						<div class="time-i">
 							<div class="time-calc" id="volume_calc"></div>

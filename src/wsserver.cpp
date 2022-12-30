@@ -27,10 +27,13 @@ void startWebsocketServer(int port, int threads) {
 	};
 	
 	root.on_message = [](std::shared_ptr<WsServer::Connection> conn, std::shared_ptr<WsServer::InMessage> msg) {
-		std::cout << "WS Closed" << std::endl;
 		handleMessage([conn](std::string resp) {
 			conn->send(resp);
 		}, msg->string());
+	};
+	
+	root.on_close = [](std::shared_ptr<WsServer::Connection> a, int b, const std::string &c) {
+		std::cout << "WS Closed" << std::endl;
 	};
 	
 	thread = std::thread([]() {

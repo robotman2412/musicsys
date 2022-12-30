@@ -29,5 +29,9 @@ void sendFFTStatus();
 void handleDownloads();
 // Escape HTML special characters.
 std::string escapeHTML(std::string in);
+// Get filename from a path.
+std::string filename(std::string path, bool keepExtension=true);
 // Control-C handler device.
 extern "C" void onInterrupt(int signum);
+// Get a new ID for creating a SONG.
+uint getNewId();

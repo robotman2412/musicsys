@@ -20,7 +20,7 @@
 
 #include <queue>
 #include <async_queue.hpp>
-#include <ws_upload.hpp>
+#include <upload.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -57,6 +57,7 @@ std::map<uint, Song> songs;
 std::vector<Download *> downloads;
 std::map<uint, Upload *> uploads;
 uint new_id_index = 0;
+std::mutex new_id_mutex;
 
 FFTSpectrum<FFT_TYPE> spectrum;
 ASQueue<FFTData<FFT_TYPE>> analysed;
@@ -80,6 +81,7 @@ int main(int argc, char **argv) {
 	// Create data directories that are expected.
 	fs::create_directories("data/songs");
 	fs::create_directories("data/song_meta");
+	importPaths.push_back("data/import");
 	
 	// Start servers.
 	#ifdef DEBUG
@@ -88,6 +90,7 @@ int main(int argc, char **argv) {
 	startHttpServer(80, "./web/", 1);
 	#endif
 	startWebsocketServer(6969, 1);
+	startImporter();
 	
 	// Load data.
 	songs = Song::loadAll();
@@ -162,8 +165,9 @@ int main(int argc, char **argv) {
 	}
 	
 	// Close servers.
-	stopHttpServer();
+	stopImporter();
 	stopWebsocketServer();
+	stopHttpServer();
 	
 	std::cout << "Exited normally." << std::endl;
 	return 0;
@@ -260,6 +264,7 @@ void handleMessage(Messager socket, std::string in) {
 		if (!data["submit_song"]["url"].is_string() || !data["submit_song"]["name"].is_string()) return;
 		
 		// Create downloader.
+		std::lock_guard lock(new_id_mutex);
 		uint id = new_id_index++;
 		Download *dl = new Download(data["submit_song"]["url"], id);
 		downloads.push_back(dl);
@@ -300,6 +305,7 @@ void handleMessage(Messager socket, std::string in) {
 		
 	} else if (data["upload_file_init"].is_object()) {
 		// Start upload command.
+		std::lock_guard lock(new_id_mutex);
 		uint id = new_id_index++;
 		uploads[id] = new Upload(id, socket, data["upload_file_init"]);
 		
@@ -320,6 +326,11 @@ void handleMessage(Messager socket, std::string in) {
 		if (shuffleMode && !queue.size()) {
 			addRandomToQueue();
 		}
+		
+	} else if (data.contains("debug")) {
+		std::lock_guard lock(new_id_mutex);
+		uint id = new_id_index++;
+		uploads[id] = new Upload(id, "data/debug.mp3");
 	}
 }
 
@@ -623,4 +634,27 @@ std::string escapeHTML(std::string in) {
 	}
 	
 	return out;
+}
+
+// Get filename from a path.
+std::string filename(std::string path, bool keepExtension) {
+	size_t idx = path.find_last_of('/');
+	if (idx < path.length() - 1) {
+		path = path.substr(idx + 1);
+	}
+	
+	if (!keepExtension) {
+		idx = path.find_last_of('.');
+		if (idx < path.length()) {
+			path = path.substr(0, idx);
+		}
+	}
+	
+	return path;
+}
+
+// Get a new ID for creating a SONG.
+uint getNewId() {
+	std::lock_guard lock(new_id_mutex);
+	return new_id_index ++;
 }
