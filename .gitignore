@@ -1,5 +1,7 @@
 __pycache__
 musicsys
+musicsys.service
+service.sh
 build
 .vscode
 data

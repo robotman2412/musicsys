@@ -27,3 +27,23 @@ echo -e "\033[32mBuilding...\033[0m"
 make
 echo
 echo
+
+# Create systemd service
+echo -e "\033[32mCreating service...\033[0m"
+
+echo "[Unit]" > musicsys.service
+echo "Description=Web-based music system" >> musicsys.service
+echo "After=graphical.target" >> musicsys.service
+echo "" >> musicsys.service
+echo "[Service]" >> musicsys.service
+echo "ExecStart=/usr/bin/bash -c -- '$(pwd)/service.sh' '$(pwd)'" >> musicsys.service
+echo "Type=simple" >> musicsys.service
+echo "User=$USER" >> musicsys.service
+echo "Group=$USER" >> musicsys.service
+echo "" >> musicsys.service
+echo "[Install]" >> musicsys.service
+echo "WantedBy=graphical.target" >> musicsys.service
+echo "" >> musicsys.service
+
+echo
+echo
