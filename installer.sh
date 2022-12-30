@@ -36,7 +36,7 @@ echo "Description=Web-based music system" >> musicsys.service
 echo "After=graphical.target" >> musicsys.service
 echo "" >> musicsys.service
 echo "[Service]" >> musicsys.service
-echo "ExecStart=/usr/bin/bash -c -- '$(echo "$(pwd)/service.sh" | sed -e 's/ /\\x20/g')' '$(echo "$(pwd)" | sed -e 's/ /\\x20/g')'" >> musicsys.service
+echo "ExecStart=/usr/bin/bash -c -- '$(echo "$(pwd)/service.sh" | sed -e 's/ /\\x20/g')' '$(echo "$(pwd)" | sed -e 's/ /\\\\x20/g')'" >> musicsys.service
 echo "Type=simple" >> musicsys.service
 echo "User=$USER" >> musicsys.service
 echo "Group=$USER" >> musicsys.service
