@@ -36,7 +36,7 @@ echo "Description=Web-based music system" >> musicsys.service
 echo "After=graphical.target" >> musicsys.service
 echo "" >> musicsys.service
 echo "[Service]" >> musicsys.service
-echo "ExecStart=/usr/bin/bash -c -- '$(pwd)/service.sh' '$(pwd)'" >> musicsys.service
+echo "ExecStart=/usr/bin/bash -c -- $(systemd-escape --path "$(pwd)/service.sh") $(systemd-escape --path "$(pwd)")" >> musicsys.service
 echo "Type=simple" >> musicsys.service
 echo "User=$USER" >> musicsys.service
 echo "Group=$USER" >> musicsys.service
