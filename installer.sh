@@ -1,6 +1,16 @@
 #!/bin/bash
 
+# Check that PWD contains no spaces.
+case "$(pwd)" in
+	*\ *)
+		echo -e "\033[31mError: Current path contains spaces.\033[0m"
+		echo -e "\033[32mEither move into a directory with no spaces or rename directories such that there are no spaces in '$(pwd)'\033[0m"
+		exit 1
+		;;
+esac
+
 echo "Running the installer for Ubuntu/Debian"
+echo
 
 # Install dependencies
 echo -e "\033[32mInstalling dependencies...\033[0m"
