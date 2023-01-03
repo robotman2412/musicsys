@@ -59,7 +59,7 @@ echo
 
 # Build the program
 echo -e "\033[32mBuilding...\033[0m"
-sudo systemctl --machine=$USER@.host --user stop musicsys.service
+systemctl --user stop musicsys.service
 make
 ec=$?
 if [[ $ec -ne 0 ]]; then
@@ -85,35 +85,36 @@ echo "[Install]" >> musicsys.service
 echo "WantedBy=graphical.target" >> musicsys.service
 echo "" >> musicsys.service
 
-sudo cp musicsys.service /etc/systemd/user/musicsys.service
+mkdir -p ~/.config/systemd/user/
+sudo cp musicsys.service ~/.config/systemd/user/musicsys.service
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
 	echo -e "\033[31mError: Service installation failed.\033[0m"
 	exit 1
 fi
-sudo systemctl --machine=$USER@.host --user daemon-reload
+systemctl --user daemon-reload
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
 	echo -e "\033[31mError: Service installation failed.\033[0m"
 	exit 1
 fi
-sudo systemctl --machine=$USER@.host --user disable musicsys.service
+systemctl --user disable musicsys.service
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
 	echo -e "\033[31mError: Service installation failed.\033[0m"
 	exit 1
 fi
-sudo systemctl --machine=$USER@.host --user enable musicsys.service
+systemctl --user enable musicsys.service
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
 	echo -e "\033[31mError: Service installation failed.\033[0m"
 	exit 1
 fi
-sudo systemctl --machine=$USER@.host --user start musicsys.service
+systemctl --user start musicsys.service
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
