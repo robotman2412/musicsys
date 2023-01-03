@@ -3,11 +3,11 @@
 echo "Running the installer for Ubuntu/Debian"
 
 # Install dependencies
-echo -e "\033[32mInstalling dependencies...\033[0m"
-sudo apt update
-sudo apt install git build-essential libssl-dev lame libmp3lame-dev libpulse-dev libboost-all-dev yt-dlp
-echo
-echo
+# echo -e "\033[32mInstalling dependencies...\033[0m"
+# sudo apt update
+# sudo apt install git build-essential libssl-dev lame libmp3lame-dev libpulse-dev libboost-all-dev yt-dlp
+# echo
+# echo
 
 # Check for git files
 echo -e "\033[32mDownloading...\033[0m"
@@ -36,14 +36,19 @@ echo "Description=Web-based music system" >> musicsys.service
 echo "After=graphical.target" >> musicsys.service
 echo "" >> musicsys.service
 echo "[Service]" >> musicsys.service
-echo "ExecStart=/usr/bin/bash -c -- '$(echo "$(pwd)/service.sh" | sed -e 's/ /\\\\\\x20/g')' '$(echo "$(pwd)" | sed -e 's/ /\\\\\\x20/g')'" >> musicsys.service
+echo "ExecStart=/usr/bin/bash -- $(echo "$(pwd)/service.sh" | sed -e 's/ /\\\\\\x20/g') $(echo "$(pwd)" | sed -e 's/ /\\\\\\x20/g')" >> musicsys.service
 echo "Type=simple" >> musicsys.service
-echo "User=$USER" >> musicsys.service
-echo "Group=$USER" >> musicsys.service
 echo "" >> musicsys.service
 echo "[Install]" >> musicsys.service
 echo "WantedBy=graphical.target" >> musicsys.service
 echo "" >> musicsys.service
+
+sudo cp musicsys.service /etc/systemd/user/musicsys.service
+sudo systemctl --machine=$USER@.host --user daemon-reload
+sudo systemctl --machine=$USER@.host --user stop musicsys.service
+sudo systemctl --machine=$USER@.host --user disable musicsys.service
+sudo systemctl --machine=$USER@.host --user enable musicsys.service
+sudo systemctl --machine=$USER@.host --user start musicsys.service
 
 echo
 echo
