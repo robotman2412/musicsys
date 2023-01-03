@@ -223,11 +223,15 @@ extern std::map<uint, Upload *> uploads;
 static void importerMain() {
 	while (importerAlive) {
 		for (std::string path: importPaths) {
-			for (auto entry: std::filesystem::directory_iterator(path)) {
-				if (entry.is_regular_file()) {
-					uint id = getNewId();
-					uploads[id] = new Upload(id, entry.path());
+			try {
+				for (auto entry: std::filesystem::directory_iterator(path)) {
+					if (entry.is_regular_file()) {
+						uint id = getNewId();
+						uploads[id] = new Upload(id, entry.path());
+					}
 				}
+			} catch (std::filesystem::filesystem_error x) {
+				// Ignored
 			}
 		}
 		usleep(1000000);
