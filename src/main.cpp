@@ -77,6 +77,7 @@ extern "C" void onInterrupt(int signum) {
 int main(int argc, char **argv) {
 	// Add abort handler.
 	signal(SIGINT, onInterrupt);
+	signal(SIGTERM, onInterrupt);
 	
 	// Create data directories that are expected.
 	fs::create_directories("data/songs");
