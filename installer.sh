@@ -82,11 +82,11 @@ echo "ExecStart=/usr/bin/bash -- $(echo "$(pwd)/service.sh" | sed -e 's/ /\\\\\\
 echo "Type=simple" >> musicsys.service
 echo "" >> musicsys.service
 echo "[Install]" >> musicsys.service
-echo "WantedBy=graphical.target" >> musicsys.service
+echo "WantedBy=default.target" >> musicsys.service
 echo "" >> musicsys.service
 
 mkdir -p ~/.config/systemd/user/
-sudo cp musicsys.service ~/.config/systemd/user/musicsys.service
+cp musicsys.service ~/.config/systemd/user/musicsys.service
 ec=$?
 if [[ $ec -ne 0 ]]; then
 	echo
