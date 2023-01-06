@@ -221,7 +221,7 @@ std::vector<Num> FFT<Num>::feedSamples(FpType songTime, std::vector<FpType> &tim
 // Output rate in analisys points per second.
 // Time span for analisys in seconds.
 template <typename Num>
-FFTSpectrum<Num>::FFTSpectrum(FpType freqLow, FpType freqHigh, size_t channelCount) {
+FFTSpectrum<Num>::FFTSpectrum(FpType freqLow, FpType freqHigh, size_t channelCount, FpType outputRate, FpType timeSpan) {
 	// Store raw parameters.
 	this->freqLow      = freqLow;
 	this->freqHigh     = freqHigh;
@@ -233,7 +233,7 @@ FFTSpectrum<Num>::FFTSpectrum(FpType freqLow, FpType freqHigh, size_t channelCou
 	// Make FFTs within the spectrum.
 	for (size_t i = 0; i < channelCount; i++) {
 		FpType freq = freqLow + i * freqGap;
-		channels.push_back(FFT<Num>(freq));
+		channels.push_back(FFT<Num>(freq, 44100, outputRate, timeSpan));
 	}
 }
 

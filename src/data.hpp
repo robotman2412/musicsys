@@ -4,6 +4,32 @@
 #include <map>
 #include <main.hpp>
 
+class ConfigFile {
+	public:
+		// Load success?
+		bool valid;
+		
+		// HTTP server port, 1-65535, default = 8080.
+		int httpPort;
+		// TODO: Websocket server port, 1-65535, default = 6969.
+		
+		// No. of FFT bands, 10-200.
+		int fftBandCount;
+		// No. of FFT samples sent per second, 1-200.
+		int fftRate;
+		// Timespan of an FFT sample, always >= 1/fftRate.
+		float fftTimespan;
+		
+		// Default constructor: Valid, default values.
+		ConfigFile();
+		// Load from file.
+		ConfigFile(std::string path);
+		// Set default values.
+		void setDefaults();
+		// Save to file.
+		void save(std::string path);
+};
+
 class Song {
 	public:
 		// Load success?

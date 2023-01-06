@@ -3,6 +3,79 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <stdexcept>
+
+
+
+// Set default config values.
+void ConfigFile::setDefaults() {
+	valid        = true;
+	httpPort     = 8080;
+	fftBandCount = 20;
+	fftRate      = 30;
+	fftTimespan  = 1/30.0;
+}
+
+// Default constructor: Valid, default values.
+ConfigFile::ConfigFile() {
+	setDefaults();
+}
+
+// Load from file.
+ConfigFile::ConfigFile(std::string path) {
+	try {
+		// Read JSON file.
+		json obj;
+		std::ifstream fd(path);
+		fd >> obj;
+		
+		// Read into the VARIABLES.
+		httpPort     = obj["http_port"];
+		fftBandCount = obj["fft_band_count"];
+		fftRate      = obj["fft_rate"];
+		fftTimespan  = obj["fft_timespan"];
+		
+		// Perform bounds checking.
+		if (httpPort < 1 || httpPort > 65535) {
+			throw std::logic_error("http_port out of range: " + std::to_string(httpPort) + " vs. limit of 1-65535");
+		} else if (fftBandCount < 20 || fftBandCount > 200) {
+			throw std::logic_error("fft_band_count out of range: " + std::to_string(fftBandCount) + " vs. limit of 20-200");
+		} else if (fftRate < 1 || fftRate > 200) {
+			throw std::logic_error("fft_rate out of range: " + std::to_string(fftBandCount) + " vs. limit of 1-200");
+		} else if (fftTimespan < 1/fftRate) {
+			throw std::logic_error("fft_timespan out of range: " + std::to_string(fftBandCount) + " vs. minimum of 1/fft_rate (" + std::to_string(1.0f / fftRate) + ")");
+		}
+		
+	} catch(std::exception &ex) {
+		// On error, set defaults.
+		std::cout << "config load failed: " << ex.what() << std::endl;
+		setDefaults();
+		valid = false;
+	}
+}
+
+// Save to file.
+void ConfigFile::save(std::string path) {
+	try {
+		// Open file.
+		std::ofstream fd(path);
+		
+		// Create JSON object.
+		json obj;
+		obj["http_port"]      = httpPort;
+		obj["fft_band_count"] = fftBandCount;
+		obj["fft_rate"]       = fftRate;
+		obj["fft_timespan"]   = fftTimespan;
+		
+		// Store to file.
+		fd << obj;
+		fd.close();
+	} catch(std::exception ex) {
+		std::cout << "config save failed: " << ex.what() << std::endl;
+	}
+}
+
+
 
 // Default constructor.
 Song::Song() {

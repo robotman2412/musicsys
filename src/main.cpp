@@ -85,12 +85,16 @@ int main(int argc, char **argv) {
 	fs::create_directories("data/import");
 	importPaths.push_back("data/import");
 	
+	// Load config file.
+	ConfigFile cfg("data/config.json");
+	// If invalid, save the defaults to said file.
+	if (!cfg.valid) cfg.save("data/config.json");
+	
+	// Set FFT parameters.
+	spectrum = FFTSpectrum<FFT_TYPE>(20, 5000, cfg.fftBandCount, cfg.fftRate, cfg.fftTimespan);
+	
 	// Start servers.
-	#ifdef DEBUG
-	startHttpServer(8080, "./web/", 1);
-	#else
-	startHttpServer(80, "./web/", 1);
-	#endif
+	startHttpServer(cfg.httpPort, "./web/", 1);
 	startWebsocketServer(6969, 1);
 	startImporter();
 	
