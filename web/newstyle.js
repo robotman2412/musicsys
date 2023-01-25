@@ -272,6 +272,9 @@ function delete_song(id) {
 }
 
 function handle_message(data) {
+	if (data.server_url != undefined) {
+		document.getElementById("server_url").innerHTML = "Connect at " + escapeHtml(data.server_url);
+	}
 	if (data.song_meta != undefined) {
 		songs[data.song_meta.id] = data.song_meta;
 		handle_meta(data.song_meta);

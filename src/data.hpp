@@ -13,6 +13,9 @@ class ConfigFile {
 		int httpPort;
 		// TODO: Websocket server port, 1-65535, default = 6969.
 		
+		// Connection URL reported on webpage.
+		std::string serverURL;
+		
 		// No. of FFT bands, 10-200.
 		int fftBandCount;
 		// No. of FFT samples sent per second, 1-200.
@@ -68,6 +71,8 @@ class Song {
 		json toJson();
 		// Double-check shared-folder-copy-file existence.
 		bool checkImportFile();
+		// Copy song data to the import folder.
+		void copyToImportFile();
 		
 		// Gets teh STRING DURATION for theee seconds count.
 		static std::string stringDuration(FpType seconds);

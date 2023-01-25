@@ -67,6 +67,8 @@ float fftRate = 60.0;
 
 bool shuffleMode = false;
 
+std::string serverURL;
+
 // Control-C handler device.
 static bool alive = true;
 extern "C" void onInterrupt(int signum) {
@@ -89,6 +91,7 @@ int main(int argc, char **argv) {
 	ConfigFile cfg("data/config.json");
 	// If invalid, save the defaults to said file.
 	if (!cfg.valid) cfg.save("data/config.json");
+	serverURL = cfg.serverURL;
 	
 	// Set FFT parameters.
 	spectrum = FFTSpectrum<FFT_TYPE>(20, 5000, cfg.fftBandCount, cfg.fftRate, cfg.fftTimespan);
@@ -133,7 +136,19 @@ int main(int argc, char **argv) {
 	
 	// Send metadata from time to time.
 	uint64_t nextTime = micros();
+	// Check for song file existence every so often.
+	uint64_t nextCheckTime = micros();
 	while (alive) {
+		if (micros() > nextCheckTime + 5000000) {
+			for (uint i = 0; i < new_id_index; i++) {
+				if (songs[i].valid && !songs[i].isConv && songs[i].dlProg >= 0.999 && !songs[i].checkImportFile()) {
+					std::cout << "Deleted \"" << songs[i].name << "\" because it was removed from shared folder." << std::endl;
+					deleteSong(i);
+				}
+			}
+			nextCheckTime = micros();
+		}
+		
 		if (player.getStatus() == MpegPlayer::FINISHED) {
 			player.acknowledge();
 			skipSong();
@@ -289,14 +304,17 @@ void handleMessage(Messager socket, std::string in) {
 			// If there is a name specified, use it.
 			if (name.length() != 0) thing.name = name;
 			
+			// If finished, save to disk.
+			if (thing.dlProg >= 0.999) {
+				thing.save();
+				thing.copyToImportFile();
+			}
+			
 			// Pack into JSON
 			json obj;
 			obj["song_meta"] = thing.toJson();
 			songs[thing.id] = thing;
 			broadcast(obj.dump());
-			
-			// If finished, save to disk.
-			if (thing.dlProg >= 0.999) thing.save();
 		});
 		
 	} else if (data["delete_song"].is_number()) {
@@ -372,6 +390,7 @@ void sendSongStatus() {
 	msg["playing"] = playing;
 	msg["set_volume"] = player.getVolume();
 	msg["shuffle_mode"] = shuffleMode;
+	msg["server_url"] = serverURL;
 	broadcast(msg.dump());
 }
 

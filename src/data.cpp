@@ -15,6 +15,7 @@ void ConfigFile::setDefaults() {
 	fftBandCount = 20;
 	fftRate      = 30;
 	fftTimespan  = 1/30.0;
+	serverURL    = "";
 }
 
 // Default constructor: Valid, default values.
@@ -35,6 +36,7 @@ ConfigFile::ConfigFile(std::string path) {
 		fftBandCount = obj["fft_band_count"];
 		fftRate      = obj["fft_rate"];
 		fftTimespan  = obj["fft_timespan"];
+		if (obj["server_url"].is_string()) serverURL = obj["server_url"];
 		
 		// Perform bounds checking.
 		if (httpPort < 1 || httpPort > 65535) {
@@ -67,6 +69,7 @@ void ConfigFile::save(std::string path) {
 		obj["fft_band_count"] = fftBandCount;
 		obj["fft_rate"]       = fftRate;
 		obj["fft_timespan"]   = fftTimespan;
+		obj["server_url"]     = serverURL;
 		
 		// Store to file.
 		fd << obj;
@@ -101,13 +104,6 @@ Song::Song(json &object) {
 		// Get imported path, and exclude from new attempts.
 		importPath = object["import_path"];
 		excludeImport(importPath);
-		
-		// If it does not exist (but no filesystem error), delete it.
-		if (std::filesystem::exists("data/import") && !std::filesystem::is_regular_file(importPath)) {
-			std::cout << "Deleted \"" << name << "\" because it was removed from shared folder." << std::endl;
-			valid = false;
-			remove();
-		}
 		
 	} else {
 		// If there is none, copy the song retroactively.
@@ -174,6 +170,18 @@ bool Song::checkImportFile() {
 	return std::filesystem::is_regular_file(importPath);
 }
 
+// Copy song data to the import folder.
+void Song::copyToImportFile() {
+	std::string songPath = "data/songs/" + std::to_string(id) + ".mp3";
+	importPath = std::filesystem::absolute("data/import/" + name);
+	excludeImport(importPath);
+	try {
+		std::filesystem::copy_file(songPath, importPath);
+	} catch (std::filesystem::filesystem_error x) {
+		// Ignored
+	}
+}
+
 
 // Gets teh STRING DURATION for theee seconds count.
 std::string Song::stringDuration(FpType seconds0) {
@@ -234,7 +242,15 @@ std::map<uint, Song> Song::loadAll() {
 		uint id = 0;
 		if (entry.is_regular_file() && isValidMetaPath(entry, id)) {
 			map[id] = Song::load(id);
+			Song &song = map[id];
 			std::cout << "Loaded song " << std::to_string(id) << std::endl;
+			
+			// If it does not exist (but no filesystem error), delete it.
+			if (std::filesystem::exists("data/import") && !std::filesystem::is_regular_file(song.importPath)) {
+				std::cout << "Deleted \"" << song.name << "\" because it was removed from shared folder." << std::endl;
+				song.valid = false;
+				song.remove();
+			}
 		}
 	}
 	

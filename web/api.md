@@ -104,6 +104,13 @@
 }
 ```
 
+# Message: server_url
+| Direction | Type
+| --------- | ----
+| S2C       | String
+
+Tells the client which URL to report for "How to connect"
+
 # Message: song_meta
 | Direction | Type
 | --------- | ----

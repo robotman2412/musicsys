@@ -197,6 +197,7 @@ bool Upload::isAlive() {
 			determineLength();
 		}
 		
+		song.copyToImportFile();
 		song.isConv = false;
 		song.valid  = valid;
 		return false;
