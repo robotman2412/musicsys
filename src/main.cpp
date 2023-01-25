@@ -82,9 +82,13 @@ int main(int argc, char **argv) {
 	signal(SIGTERM, onInterrupt);
 	
 	// Create data directories that are expected.
-	fs::create_directories("data/songs");
-	fs::create_directories("data/song_meta");
-	fs::create_directories("data/import");
+	try {
+		fs::create_directories("data/songs");
+		fs::create_directories("data/song_meta");
+		fs::create_directories("data/import");
+	} catch(fs::filesystem_error x) {
+		// Ignored
+	}
 	importPaths.push_back("data/import");
 	
 	// Load config file.
