@@ -18,7 +18,7 @@ void Download::managerMain() {
 		output.id       = id;
 		output.duration = obj["duration"];
 		output.iconUrl  = obj["thumbnail"];
-		output.name     = obj["fulltitle"];
+		output.name     = escapeHTML(obj["fulltitle"]);
 		output.valid    = true;
 		output.durationStr = Song::stringDuration(output.duration);
 	} catch(json::type_error err) {

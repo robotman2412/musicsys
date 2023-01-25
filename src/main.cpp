@@ -93,13 +93,13 @@ int main(int argc, char **argv) {
 	// Set FFT parameters.
 	spectrum = FFTSpectrum<FFT_TYPE>(20, 5000, cfg.fftBandCount, cfg.fftRate, cfg.fftTimespan);
 	
+	// Load data.
+	songs = Song::loadAll();
+	
 	// Start servers.
 	startHttpServer(cfg.httpPort, "./web/", 1);
 	startWebsocketServer(6969, 1);
 	startImporter();
-	
-	// Load data.
-	songs = Song::loadAll();
 	
 	// Determine next ID to to-be-uploaded songs.
 	for (auto &pair: songs) {
@@ -631,11 +631,19 @@ std::string escapeHTML(std::string in) {
 	for (size_t i = 0; i < in.size(); i++) {
 		switch (in[i]) {
 			default:   out += in[i];    break;
-			case '<':  out += "&lt;";   break;
-			case '>':  out += "&gt;";   break;
+			// HTML invalid but not path invalid
 			case '&':  out += "&amp;";  break;
 			case '\'': out += "&#39;";  break;
+			// path invalid
+			case '<':  out += "&lt;";   break;
+			case '>':  out += "&gt;";   break;
+			case ':':  out += "&#58;";  break;
 			case '"':  out += "&quot;"; break;
+			case '/':  out += "&#47;";  break;
+			case '\\': out += "&#92;";  break;
+			case '|':  out += "&#124;"; break;
+			case '?':  out += "&#63;";  break;
+			case '*':  out += "&#42;";  break;
 		}
 	}
 	

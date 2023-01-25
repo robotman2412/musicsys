@@ -39,6 +39,8 @@ class Song {
 		uint id;
 		// Song queue index.
 		uint index;
+		// Location from which the THING has been imported, or empty if none.
+		std::string importPath;
 		// Icon URL.
 		std::string iconUrl;
 		// Song name.
@@ -64,6 +66,8 @@ class Song {
 		void remove();
 		// Convert song to JSON.
 		json toJson();
+		// Double-check shared-folder-copy-file existence.
+		bool checkImportFile();
 		
 		// Gets teh STRING DURATION for theee seconds count.
 		static std::string stringDuration(FpType seconds);

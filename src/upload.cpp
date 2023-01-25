@@ -89,10 +89,10 @@ Upload::Upload(uint id, std::string inPath) {
 	std::string tmpPath = "data/songs/" + std::to_string(id) + ".tmp";
 	if (!std::filesystem::copy_file(inPath, tmpPath)) {
 		abort();
-		std::remove(inPath.c_str());
+		excludeImport(inPath);
 		return;
 	}
-	std::remove(inPath.c_str());
+	excludeImport(inPath);
 	
 	// Set paths.
 	path = tmpPath;
@@ -101,6 +101,7 @@ Upload::Upload(uint id, std::string inPath) {
 	// Start transcoding.
 	isTranscoding = true;
 	song.isConv   = true;
+	song.importPath = inPath;
 	lengthChecked = false;
 	
 	// Start child process.
@@ -213,6 +214,7 @@ Song Upload::getSong() {
 
 
 std::vector<std::string> importPaths;
+std::vector<std::string> excluded;
 
 static std::thread importer;
 static volatile bool importerAlive;
@@ -225,9 +227,15 @@ static void importerMain() {
 		for (std::string path: importPaths) {
 			try {
 				for (auto entry: std::filesystem::directory_iterator(path)) {
-					if (entry.is_regular_file()) {
-						uint id = getNewId();
-						uploads[id] = new Upload(id, entry.path());
+					std::string path = std::filesystem::absolute(entry.path());
+					try {
+						if (entry.is_regular_file() && std::find(excluded.begin(), excluded.end(), path) == excluded.end()) {
+							uint id = getNewId();
+							uploads[id] = new Upload(id, path);
+						}
+					} catch (std::filesystem::filesystem_error x) {
+						// File becomes invalid.
+						excludeImport(path);
 					}
 				}
 			} catch (std::filesystem::filesystem_error x) {
@@ -248,5 +256,15 @@ void startImporter() {
 void stopImporter() {
 	importerAlive = false;
 	importer.join();
+}
+
+// Exclude a path from import attempts.
+void excludeImport(std::string path) {
+	excluded.push_back(path);
+}
+
+// Undo the effects of `excludeImport`.
+void includeImport(std::string path) {
+	excluded.erase(std::find(excluded.begin(), excluded.end(), path));
 }
 

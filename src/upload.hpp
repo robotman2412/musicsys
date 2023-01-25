@@ -79,3 +79,7 @@ extern std::vector<std::string> importPaths;
 void startImporter();
 // Stop the importer thread.
 void stopImporter();
+// Exclude a path from import attempts.
+void excludeImport(std::string path);
+// Undo the effects of `excludeImport`.
+void includeImport(std::string path);

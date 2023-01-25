@@ -1,5 +1,6 @@
 
 #include "data.hpp"
+#include "upload.hpp"
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -95,15 +96,43 @@ Song::Song(json &object) {
 	isConv = false;
 	if (object["str_duration"].is_string()) durationStr = object["str_duration"];
 	else valid = false;
+	
+	if (object["import_path"].is_string()) {
+		// Get imported path, and exclude from new attempts.
+		importPath = object["import_path"];
+		excludeImport(importPath);
+		
+		// If it does not exist (but no filesystem error), delete it.
+		if (std::filesystem::exists("data/import") && !std::filesystem::is_regular_file(importPath)) {
+			std::cout << "Deleted \"" << name << "\" because it was removed from shared folder." << std::endl;
+			valid = false;
+			remove();
+		}
+		
+	} else {
+		// If there is none, copy the song retroactively.
+		std::string songPath = "data/songs/" + std::to_string(id) + ".mp3";
+		importPath = std::filesystem::absolute("data/import/" + name);
+		try {
+			std::filesystem::copy_file(songPath, importPath);
+		} catch (std::filesystem::filesystem_error x) {
+			// Ignored
+		}
+		excludeImport(importPath);
+		
+		// Update saved metadata.
+		save();
+	}
 }
 
 // Save to song_meta folder.
 void Song::save() {
 	json out;
-	out["id"]           = id;
-	out["name"]         = name;
-	out["str_duration"] = durationStr;
-	out["icon_url"]     = iconUrl;
+	out["id"]                = id;
+	out["name"]              = name;
+	out["str_duration"]      = durationStr;
+	out["import_path"]       = importPath;
+	out["icon_url"]          = iconUrl;
 	out["is_converting"]     = isConv;
 	out["download_progress"] = dlProg;
 	std::string path = std::string("data/song_meta/") + std::to_string(id) + ".json";
@@ -119,6 +148,10 @@ void Song::remove() {
 	std::remove(path.c_str());
 	path = std::string("data/songs/") + std::to_string(id) + ".mp3";
 	std::remove(path.c_str());
+	if (importPath.length()) {
+		includeImport(importPath);
+		std::remove(importPath.c_str());
+	}
 }
 
 // Convert song to JSON.
@@ -134,6 +167,11 @@ json Song::toJson() {
 	out["is_converting"]     = isConv;
 	out["download_progress"] = dlProg;
 	return out;
+}
+
+// Double-check shared-folder-copy-file existence.
+bool Song::checkImportFile() {
+	return std::filesystem::is_regular_file(importPath);
 }
 
 
