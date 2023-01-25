@@ -197,6 +197,10 @@ bool Upload::isAlive() {
 			determineLength();
 		}
 		
+		song.name = deduplicateName(song.id, song.name);
+		json out;
+		out["song_meta"] = song.toJson();
+		broadcast(out.dump());
 		song.copyToImportFile();
 		song.isConv = false;
 		song.valid  = valid;

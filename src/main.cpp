@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <regex>
 
 #include <queue>
 #include <async_queue.hpp>
@@ -307,6 +308,7 @@ void handleMessage(Messager socket, std::string in) {
 			Song thing = dl.getSongMeta();
 			// If there is a name specified, use it.
 			if (name.length() != 0) thing.name = name;
+			thing.name = deduplicateName(thing.id, thing.name);
 			
 			// If finished, save to disk.
 			if (thing.dlProg >= 0.999) {
@@ -688,6 +690,21 @@ std::string filename(std::string path, bool keepExtension) {
 	}
 	
 	return path;
+}
+
+// Deduplicate song name.
+std::string deduplicateName(uint id, std::string in) {
+	bool changes;
+	do {
+		changes = false;
+		for (auto pair: songs) {
+			if (pair.second.valid && pair.second.id != id && pair.second.name == in) {
+				in += " (copy)";
+				changes = true;
+			}
+		}
+	} while(changes);
+	return in;
 }
 
 // Get a new ID for creating a SONG.

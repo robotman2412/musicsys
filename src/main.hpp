@@ -31,6 +31,8 @@ void handleDownloads();
 std::string escapeHTML(std::string in);
 // Get filename from a path.
 std::string filename(std::string path, bool keepExtension=true);
+// Deduplicate song name.
+std::string deduplicateName(uint id, std::string in);
 // Control-C handler device.
 extern "C" void onInterrupt(int signum);
 // Get a new ID for creating a SONG.
