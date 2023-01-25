@@ -108,11 +108,11 @@ Song::Song(json &object) {
 	} else {
 		// If there is none, copy the song retroactively.
 		std::string songPath = "data/songs/" + std::to_string(id) + ".mp3";
-		importPath = std::filesystem::absolute("data/import/" + name);
+		importPath = std::filesystem::absolute("data/import/" + name + ".mp3");
 		try {
 			std::filesystem::copy_file(songPath, importPath);
 		} catch (std::filesystem::filesystem_error x) {
-			// Ignored
+			std::cout << "Filesystem error: " << x.what() << std::endl;
 		}
 		excludeImport(importPath);
 		
@@ -173,7 +173,7 @@ bool Song::checkImportFile() {
 // Copy song data to the import folder.
 void Song::copyToImportFile() {
 	std::string songPath = "data/songs/" + std::to_string(id) + ".mp3";
-	importPath = std::filesystem::absolute("data/import/" + name);
+	importPath = std::filesystem::absolute("data/import/" + name + ".mp3");
 	excludeImport(importPath);
 	try {
 		std::filesystem::copy_file(songPath, importPath);
@@ -245,8 +245,8 @@ std::map<uint, Song> Song::loadAll() {
 			Song &song = map[id];
 			std::cout << "Loaded song " << std::to_string(id) << std::endl;
 			
-			// If it does not exist (but no filesystem error), delete it.
 			if (std::filesystem::exists("data/import") && !std::filesystem::is_regular_file(song.importPath)) {
+				// If it does not exist (but no filesystem error), delete it.
 				std::cout << "Deleted \"" << song.name << "\" because it was removed from shared folder." << std::endl;
 				song.valid = false;
 				song.remove();
