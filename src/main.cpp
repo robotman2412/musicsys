@@ -145,11 +145,33 @@ int main(int argc, char **argv) {
 	uint64_t nextCheckTime = micros();
 	while (alive) {
 		if (micros() > nextCheckTime + 5000000) {
-			for (uint i = 0; i < new_id_index; i++) {
-				if (songs[i].valid && !songs[i].isConv && songs[i].dlProg >= 0.999 && !songs[i].checkImportFile()) {
-					std::cout << "Deleted \"" << songs[i].name << "\" because it was removed from shared folder." << std::endl;
-					deleteSong(i);
+			// Check for a magic file.
+			// If it does not match, create a new one and abort search.
+			const char magic[] = "Magic{deadbeef}";
+			const std::string magicPath = "data/import/.musicsys_magic_file";
+			bool doesTheSearch = false;
+			try {
+				std::ifstream in(magicPath);
+				char tmp[sizeof(magic)] = {0};
+				tmp[sizeof(tmp)-1]=0;
+				in.read(tmp, sizeof(tmp)-1);
+				doesTheSearch = !memcmp(magic, tmp, sizeof(magic)-1);
+			} catch(...) {}
+			
+			if (doesTheSearch) {
+				for (uint i = 0; i < new_id_index; i++) {
+					if (songs[i].valid && !songs[i].isConv && songs[i].dlProg >= 0.999 && !songs[i].checkImportFile()) {
+						std::cout << "Deleted \"" << songs[i].name << "\" because it was removed from shared folder." << std::endl;
+						deleteSong(i);
+					}
 				}
+			} else {
+				try {
+					std::cout << "Missing magic file!\n";
+					std::ofstream out(magicPath);
+					out.write(magic, sizeof(magic)-1);
+					out.flush();
+				} catch(...) {}
 			}
 			nextCheckTime = micros();
 		}
